@@ -36,26 +36,40 @@
   <h1>WebSocket Chat</h1>
   <div id="messages"></div>
   <div id="input-container">
+    <input type="text" id="name-input" placeholder="Name" />
     <input type="text" id="message-input" placeholder="Type a message..." />
     <button id="send-button">Send</button>
   </div>
 
   <script>
     const messagesDiv = document.getElementById('messages');
+    const name = document.getElementById('name-input');
     const input = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
 
     const socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
 
     socket.onmessage = (event) => {
-      const message = document.createElement('div');
-      message.innerHTML = event.data;
-      messagesDiv.appendChild(message);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      try
+      {
+        const data = JSON.parse(event.data);
+        const message = document.createElement('div');
+        
+        //message content
+        message.innerHTML = `<strong>${data.name}</strong>: ${data.text}`;
+        
+        messagesDiv.appendChild(message);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+      catch (error)
+      {
+        console.error('Error parsing message:', error);
+      }
     };
 
+
     sendButton.addEventListener('click', () => {
-      const message = input.value.trim();
+      const message = JSON.stringify({name: name, text: input.value.trim()});
       if (message) {
         socket.send(message);
         input.value = '';
