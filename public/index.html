@@ -13,7 +13,7 @@
     }
     #messages {
       border: 1px solid #ccc;
-      height: 75vh;
+      height: 70vh;
       overflow-y: scroll;
       padding: 10px;
       margin-bottom: 10px;
@@ -40,26 +40,61 @@
     <input type="text" id="message-input" placeholder="Type a message..." />
     <button id="send-button">Send</button>
   </div>
+  <div id="input-container">
+    <button class="btn btn-primary m-2" id="button1" value="btn1" onclick="buttonPress(0)">gomb1</button>
+    <button class="btn btn-danger m-2" id="button2" value="btn2" onclick="buttonPress(1)">gomb2</button>
+    <button class="btn btn-success m-2" id="button3" value="btn3" onclick="buttonPress(2)">gomb3</button>
+  </div>
 
+ 
+  <div style="display: none;"><!--Icons-->
+    <img src="imgs/bus.svg" alt="" class="icon">
+    <img src="imgs/edge.svg" alt="" class="icon">
+    <img src="imgs/sunglasses.svg" alt="" class="icon">
+  </div>
   <script>
     const messagesDiv = document.getElementById('messages');
     const name = document.getElementById('name-input');
     const input = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
 
+    let Icons = document.getElementsByClassName("icon");
+    
+
     const socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
 
-    socket.onmessage = (event) => {
+    socket.onmessage = (event) =>
+    {
       try
       {
         const data = JSON.parse(event.data);
         const message = document.createElement('div');
         
         //message content
-        message.innerHTML = `<strong>${data.user}</strong>: ${data.text}`;
+        switch (data.action) {
+          case "message":
+            message.innerHTML = `<strong>${data.user}</strong>: ${data.text}`;
+          
+            messagesDiv.appendChild(message);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            break;
+
+          case "button":
+            message.innerHTML = `<strong>${data.user}</strong>:`;
+
+            //Clone the icon element
+            const iconElement = document.createElement('img');
+            iconElement.src = Icons[data.button].src;
+            iconElement.alt = Icons[data.button].alt;
+            message.appendChild(iconElement);        
+            
+            messagesDiv.appendChild(message);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            break;
         
-        messagesDiv.appendChild(message);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          default:
+            break;
+        }
       }
       catch (error)
       {
@@ -68,18 +103,32 @@
     };
 
 
-    sendButton.addEventListener('click', () => {
-      const message = JSON.stringify({user: name.value.trim(), text: input.value.trim()});
+    sendButton.addEventListener('click', () =>
+    {
+      const message = JSON.stringify({action: "message", user: name.value.trim(), text: input.value.trim()});
       console.log(message);
       
-      if (message) {
+      if (message)
+      {
         socket.send(message);
-        input.value = '';
       }
     });
 
-    input.addEventListener('keypress', (event) => {
-      if (event.key === 'Enter') {
+    function buttonPress(id)
+    {
+      const message = JSON.stringify({action: "button", user: name.value.trim(), button: id});
+      
+      if (message)
+      {
+        socket.send(message);
+        input.value = '';
+      }
+    }
+
+    input.addEventListener('keypress', (event) =>
+    {
+      if (event.key === 'Enter')
+      {
         sendButton.click();
       }
     });
