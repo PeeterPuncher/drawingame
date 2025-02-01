@@ -53,6 +53,29 @@
     function goBack() {
       window.location.href = "/";
     }
+
+
+    socket.onopen = () => {
+  console.log('WebSocket connection established');
+  if (window.location.pathname === '/room') {
+    const roomId = new URLSearchParams(window.location.search).get('roomId');
+    socket.send(JSON.stringify({ type: 'join-room', roomId }));
+  }
+};
+
+socket.onmessage = (event) => {
+  console.log('Message received:', event.data);
+  const data = JSON.parse(event.data);
+  // Handle messages (as before)
+};
+
+socket.onclose = () => {
+  console.log('WebSocket connection closed');
+};
+
+socket.onerror = (error) => {
+  console.error('WebSocket error:', error);
+};
   </script>
 </body>
 </html>
