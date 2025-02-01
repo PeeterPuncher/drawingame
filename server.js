@@ -1,7 +1,6 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,12 +17,18 @@ wss.on('connection', (ws) => {
     const data = JSON.parse(message);
     
     if (data.type === 'create-room') {
-      const roomId = uuidv4(); // Generate a unique room ID
+      let roomId;
+      
+      // Ensure unique room code
+      do {
+        roomId = generateRoomCode();
+      } while (rooms[roomId]); 
+    
       rooms[roomId] = new Set();
       ws.roomId = roomId;
       rooms[roomId].add(ws);
       ws.send(JSON.stringify({ type: 'room-created', roomId }));
-    } 
+    }
     
     else if (data.type === 'join-room') {
       const { roomId } = data;
@@ -63,4 +68,9 @@ const PORT = 3000;
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+
+function generateRoomCode() {
+  return Math.floor(10000 + Math.random() * 90000).toString(); // 5-digit code
+}
 
