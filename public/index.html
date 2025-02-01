@@ -41,7 +41,6 @@
         roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
                               <button class="btn btn-success" onclick="joinRoom('${room.roomId}')">Join</button>`;
         roomList.appendChild(roomItem);
-        
       });
     }
     else if (data.type === 'room-created')

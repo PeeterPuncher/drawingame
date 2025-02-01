@@ -40,12 +40,12 @@ wss.on('connection', (ws) =>
     const data = JSON.parse(message);
     console.log('Message received from client:', data);
 
-    if (data.type === 'get-lobby')
+    if (data.type == 'get-lobby')
     {
       updateLobby(); // Send the latest room list to the client
     }
 
-    else if (data.type === 'create-room')
+    else if (data.type == 'create-room')
     {
       let roomId;
 
@@ -63,7 +63,7 @@ wss.on('connection', (ws) =>
       updateLobby();
     }
 
-    else if (data.type === 'join-room')
+    else if (data.type == 'join-room')
     {
       const { roomId } = data;
 
@@ -80,7 +80,7 @@ wss.on('connection', (ws) =>
         ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
       }
     }
-    else if (data.type === 'message')
+    else if (data.type == 'message')
     {
       const { roomId, text, user } = data;
 
@@ -105,7 +105,7 @@ wss.on('connection', (ws) =>
     if (ws.roomId && rooms[ws.roomId])
     {
       rooms[ws.roomId].clients.delete(ws);
-      if (rooms[ws.roomId].clients.size === 0)
+      if (rooms[ws.roomId].clients.size == 0)
       {
         delete rooms[ws.roomId];
         console.log(`Room deleted: ${ws.roomId}`);
