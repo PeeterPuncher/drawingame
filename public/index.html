@@ -34,6 +34,7 @@
 
     if (data.type === 'update-lobby')
     {
+      socket.send(JSON.stringify({ type: 'get-lobby' }));
       roomList.innerHTML = '';
       data.rooms.forEach(room => {
         const roomItem = document.createElement('li');
@@ -41,11 +42,12 @@
         roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
                               <button class="btn btn-success" onclick="joinRoom('${room.roomId}')">Join</button>`;
         roomList.appendChild(roomItem);
+        
       });
     }
     else if (data.type === 'room-created')
     {
-      //window.location.href = `/room?roomId=${data.roomId}`;
+      window.location.href = `/room?roomId=${data.roomId}`;
     }
   };
 
