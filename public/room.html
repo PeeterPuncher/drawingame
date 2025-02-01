@@ -37,7 +37,9 @@
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      if (data.type === 'message') {
+      if (data.type === 'message')
+      {
+        console.log(data);
         const message = document.createElement('div');
         message.innerHTML = `<strong>${data.user}</strong>: ${data.text}`;
         messagesDiv.appendChild(message);
@@ -61,12 +63,6 @@
     const roomId = new URLSearchParams(window.location.search).get('roomId');
     socket.send(JSON.stringify({ type: 'join-room', roomId }));
   }
-};
-
-socket.onmessage = (event) => {
-  console.log('Message received:', event.data);
-  const data = JSON.parse(event.data);
-  // Handle messages (as before)
 };
 
 socket.onclose = () => {
