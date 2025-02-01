@@ -47,6 +47,7 @@
 
     sendButton.addEventListener('click', () => {
       socket.send(JSON.stringify({ type: 'message', roomId, user: nameInput.value.trim(), text: messageInput.value.trim() }));
+      console.log("Message sent");
     });
 
     function goBack() {

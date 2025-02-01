@@ -40,9 +40,7 @@
                                 <button class="btn btn-success" onclick="joinRoom('${room.roomId}')">Join</button>`;
           roomList.appendChild(roomItem);
         });
-      } 
-      
-      else if (data.type === 'room-created') {
+      } else if (data.type === 'room-created') {
         window.location.href = `/room?roomId=${data.roomId}`;
       }
     };
