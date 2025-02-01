@@ -30,8 +30,9 @@
 
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
-
-      if (data.type === 'update-lobby') {
+      if (data.type === 'update-lobby')
+      {
+        log(data.rooms);
         roomList.innerHTML = ''; 
         data.rooms.forEach(room => {
           const roomItem = document.createElement('li');
@@ -63,12 +64,6 @@
     const roomId = new URLSearchParams(window.location.search).get('roomId');
     socket.send(JSON.stringify({ type: 'join-room', roomId }));
   }
-};
-
-socket.onmessage = (event) => {
-  console.log('Message received:', event.data);
-  const data = JSON.parse(event.data);
-  // Handle messages (as before)
 };
 
 socket.onclose = () => {
