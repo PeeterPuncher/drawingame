@@ -43,7 +43,7 @@
       } 
       
       else if (data.type === 'room-created') {
-        window.location.href = `/chatroom?roomId=${data.roomId}`;
+        window.location.href = `/room?roomId=${data.roomId}`;
       }
     };
 
@@ -52,7 +52,7 @@
     });
 
     function joinRoom(roomId) {
-      window.location.href = `/chatroom?roomId=${roomId}`;
+      window.location.href = `/room?roomId=${roomId}`;
     }
   </script>
 </body>
