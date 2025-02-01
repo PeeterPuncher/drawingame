@@ -61,9 +61,12 @@
 
 
 
-    socket.onopen = () => {
+socket.onopen = () => {
   console.log('WebSocket connection established');
-  if (window.location.pathname === '/room') {
+  socket.send(JSON.stringify({ type: 'get-lobby' })); // Request the latest room list
+
+  if (window.location.pathname === '/room')
+  {
     const roomId = new URLSearchParams(window.location.search).get('roomId');
     socket.send(JSON.stringify({ type: 'join-room', roomId }));
   }
