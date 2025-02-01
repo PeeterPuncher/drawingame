@@ -46,19 +46,20 @@
     }
     else if (data.type === 'room-created')
     {
-      socket.send(JSON.stringify({ type: 'get-lobby' }));
       window.location.href = `/room?roomId=${data.roomId}`;
+      socket.send(JSON.stringify({ type: 'get-lobby' }));
     }
   };
 
     createRoomButton.addEventListener('click', () => {
       socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim() }));
+      socket.send(JSON.stringify({ type: 'get-lobby' }));
     });
 
     function joinRoom(roomId)
     {
-      socket.send(JSON.stringify({ type: 'get-lobby' }));
       window.location.href = `/room?roomId=${roomId}`;
+      socket.send(JSON.stringify({ type: 'get-lobby' }));
     }
 
 
