@@ -48,8 +48,13 @@
     };
 
     sendButton.addEventListener('click', () => {
-      socket.send(JSON.stringify({ type: 'message', roomId, user: nameInput.value.trim(), text: messageInput.value.trim() }));
-      console.log("Message sent");
+        const user = nameInput.value.trim();
+        const text = messageInput.value.trim();
+        if (user && text) {
+            socket.send(JSON.stringify({ type: 'message', roomId, user, text }));
+            messageInput.value = ''; // Clear input after sending
+            console.log('Message sent:', { roomId, user, text });
+        }
     });
 
     function goBack() {

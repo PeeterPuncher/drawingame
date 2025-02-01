@@ -28,23 +28,24 @@
 
     let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'update-lobby')
-      {
-        console.log(data.rooms);
-        roomList.innerHTML = ''; 
-        data.rooms.forEach(room => {
-          const roomItem = document.createElement('li');
-          roomItem.className = 'list-group-item d-flex justify-content-between';
-          roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
-                                <button class="btn btn-success" onclick="joinRoom('${room.roomId}')">Join</button>`;
-          roomList.appendChild(roomItem);
-        });
-      } else if (data.type === 'room-created') {
-        window.location.href = `/room?roomId=${data.roomId}`;
-      }
-    };
+  socket.onmessage = (event) => {
+    console.log('Message received:', event.data);
+    const data = JSON.parse(event.data);
+
+    if (data.type === 'update-lobby')
+    {
+      roomList.innerHTML = '';
+      data.rooms.forEach(room => {
+        const roomItem = document.createElement('li');
+        roomItem.className = 'list-group-item d-flex justify-content-between';
+        roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
+                              <button class="btn btn-success" onclick="joinRoom('${room.roomId}')">Join</button>`;
+        roomList.appendChild(roomItem);
+      });
+    } else if (data.type === 'room-created') {
+      window.location.href = `/room?roomId=${data.roomId}`;
+    }
+  };
 
     createRoomButton.addEventListener('click', () => {
       socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim() }));
