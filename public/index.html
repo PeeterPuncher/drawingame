@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebSocket Chat</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <title>WebSocket Room Chat</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -20,6 +20,7 @@
     }
     #input-container {
       display: flex;
+      margin-bottom: 10px;
     }
     #message-input {
       flex: 1;
@@ -33,106 +34,95 @@
   </style>
 </head>
 <body>
-  <h1>WebSocket Chat</h1>
+  <h1>WebSocket Room Chat</h1>
+  
+  <!-- Room Controls -->
+  <div>
+    <button class="btn btn-primary" id="create-room">Create Room</button>
+    <input type="text" id="room-id" placeholder="Enter Room ID">
+    <button class="btn btn-success" id="join-room">Join Room</button>
+  </div>
+  
+  <p id="current-room" style="margin-top: 10px; font-weight: bold;"></p>
+
+  <!-- Chat Messages -->
   <div id="messages"></div>
+
+  <!-- Chat Input -->
   <div id="input-container">
-    <input type="text" id="name-input" placeholder="Name" />
-    <input type="text" id="message-input" placeholder="Type a message..." />
+    <input type="text" id="name-input" placeholder="Name">
+    <input type="text" id="message-input" placeholder="Type a message...">
     <button id="send-button">Send</button>
   </div>
-  <div id="input-container">
-    <button class="btn btn-primary m-2" id="button1" value="btn1" onclick="buttonPress(0)">gomb1</button>
-    <button class="btn btn-danger m-2" id="button2" value="btn2" onclick="buttonPress(1)">gomb2</button>
-    <button class="btn btn-success m-2" id="button3" value="btn3" onclick="buttonPress(2)">gomb3</button>
-  </div>
 
- 
-  <div style="display: none;"><!--Icons-->
-    <img src="imgs/bus.svg" alt="" class="icon">
-    <img src="imgs/edge.svg" alt="" class="icon">
-    <img src="imgs/sunglasses.svg" alt="" class="icon">
-  </div>
   <script>
     const messagesDiv = document.getElementById('messages');
-    const name = document.getElementById('name-input');
-    const input = document.getElementById('message-input');
+    const nameInput = document.getElementById('name-input');
+    const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
+    const createRoomButton = document.getElementById('create-room');
+    const joinRoomButton = document.getElementById('join-room');
+    const roomIdInput = document.getElementById('room-id');
+    const currentRoomDisplay = document.getElementById('current-room');
 
-    let Icons = document.getElementsByClassName("icon");
-    
+    let socket = new WebSocket('ws://localhost:3000');
+    let roomId = null;
 
-    const socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
-
-    socket.onmessage = (event) =>
-    {
-      try
-      {
+    socket.onmessage = (event) => {
+      try {
         const data = JSON.parse(event.data);
         const message = document.createElement('div');
-        
-        //message content
-        switch (data.action) {
-          case "message":
-            message.innerHTML = `<strong>${data.user}</strong>: ${data.text}`;
-          
-            messagesDiv.appendChild(message);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            break;
 
-          case "button":
-            message.innerHTML = `<strong>${data.user}</strong>:`;
-
-            //Clone the icon element
-            const iconElement = document.createElement('img');
-            iconElement.src = Icons[data.button].src;
-            iconElement.alt = Icons[data.button].alt;
-            message.appendChild(iconElement);        
-            
-            messagesDiv.appendChild(message);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            break;
-        
-          default:
-            break;
+        if (data.type === 'room-created') {
+          roomId = data.roomId;
+          currentRoomDisplay.innerText = `Current Room: ${roomId}`;
+          roomIdInput.value = roomId;
+        } 
+        else if (data.type === 'room-joined') {
+          roomId = data.roomId;
+          currentRoomDisplay.innerText = `Current Room: ${roomId}`;
+        } 
+        else if (data.type === 'message') {
+          message.innerHTML = `<strong>${data.user}</strong>: ${data.text}`;
+          messagesDiv.appendChild(message);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
-      }
-      catch (error)
-      {
+      } catch (error) {
         console.error('Error parsing message:', error);
       }
     };
 
+    // Create Room
+    createRoomButton.addEventListener('click', () => {
+      socket.send(JSON.stringify({ type: 'create-room' }));
+    });
 
-    sendButton.addEventListener('click', () =>
-    {
-      const message = JSON.stringify({action: "message", user: name.value.trim(), text: input.value.trim()});
-      console.log(message);
-      
-      if (message)
-      {
+    // Join Room
+    joinRoomButton.addEventListener('click', () => {
+      if (roomIdInput.value.trim() !== "") {
+        roomId = roomIdInput.value.trim();
+        socket.send(JSON.stringify({ type: 'join-room', roomId }));
+      }
+    });
+
+    // Send Message
+    sendButton.addEventListener('click', () => {
+      if (roomId) {
+        const message = JSON.stringify({
+          type: 'message',
+          roomId,
+          user: nameInput.value.trim(),
+          text: messageInput.value.trim()
+        });
         socket.send(message);
       }
     });
 
-    function buttonPress(id)
-    {
-      const message = JSON.stringify({action: "button", user: name.value.trim(), button: id});
-      
-      if (message)
-      {
-        socket.send(message);
-        input.value = '';
-      }
-    }
-
-    input.addEventListener('keypress', (event) =>
-    {
-      if (event.key === 'Enter')
-      {
-        sendButton.click();
-      }
+    // Send Message on Enter Key
+    messageInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') sendButton.click();
     });
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
 </body>
 </html>
