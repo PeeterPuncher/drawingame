@@ -1,128 +1,59 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebSocket Room Chat</title>
+  <title>Lobby</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-    }
-    #messages {
-      border: 1px solid #ccc;
-      height: 70vh;
-      overflow-y: scroll;
-      padding: 10px;
-      margin-bottom: 10px;
-    }
-    #input-container {
-      display: flex;
-      margin-bottom: 10px;
-    }
-    #message-input {
-      flex: 1;
-      padding: 10px;
-      font-size: 16px;
-    }
-    #send-button {
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-  </style>
 </head>
 <body>
-  <h1>WebSocket Room Chat</h1>
-  
-  <!-- Room Controls -->
-  <div>
-    <button class="btn btn-primary" id="create-room">Create Room</button>
-    <input type="text" id="room-id" placeholder="Enter Room ID">
-    <button class="btn btn-success" id="join-room">Join Room</button>
-  </div>
-  
-  <p id="current-room" style="margin-top: 10px; font-weight: bold;"></p>
+  <div class="container">
+    <h1>Room Lobby</h1>
 
-  <!-- Chat Messages -->
-  <div id="messages"></div>
+    <!-- Create Room -->
+    <div class="mb-3">
+      <input type="text" id="room-name" class="form-control" placeholder="Room Name">
+      <button class="btn btn-primary mt-2" id="create-room">Create Room</button>
+    </div>
 
-  <!-- Chat Input -->
-  <div id="input-container">
-    <input type="text" id="name-input" placeholder="Name">
-    <input type="text" id="message-input" placeholder="Type a message...">
-    <button id="send-button">Send</button>
+    <!-- Room List -->
+    <h3>Available Rooms</h3>
+    <ul id="room-list" class="list-group"></ul>
   </div>
 
   <script>
-    const messagesDiv = document.getElementById('messages');
-    const nameInput = document.getElementById('name-input');
-    const messageInput = document.getElementById('message-input');
-    const sendButton = document.getElementById('send-button');
+    const roomList = document.getElementById('room-list');
+    const roomNameInput = document.getElementById('room-name');
     const createRoomButton = document.getElementById('create-room');
-    const joinRoomButton = document.getElementById('join-room');
-    const roomIdInput = document.getElementById('room-id');
-    const currentRoomDisplay = document.getElementById('current-room');
 
     let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
-    let roomId = null;
 
     socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        const message = document.createElement('div');
+      const data = JSON.parse(event.data);
 
-        if (data.type === 'room-created') {
-          roomId = data.roomId;
-          currentRoomDisplay.innerText = `Current Room: ${roomId}`;
-          roomIdInput.value = roomId;
-        } 
-        else if (data.type === 'room-joined') {
-          roomId = data.roomId;
-          currentRoomDisplay.innerText = `Current Room: ${roomId}`;
-        } 
-        else if (data.type === 'message') {
-          message.innerHTML = `<strong>${data.user}</strong>: ${data.text}`;
-          messagesDiv.appendChild(message);
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-      } catch (error) {
-        console.error('Error parsing message:', error);
+      if (data.type === 'update-lobby') {
+        roomList.innerHTML = ''; 
+        data.rooms.forEach(room => {
+          const roomItem = document.createElement('li');
+          roomItem.className = 'list-group-item d-flex justify-content-between';
+          roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
+                                <button class="btn btn-success" onclick="joinRoom('${room.roomId}')">Join</button>`;
+          roomList.appendChild(roomItem);
+        });
+      } 
+      
+      else if (data.type === 'room-created') {
+        window.location.href = `/chatroom?roomId=${data.roomId}`;
       }
     };
 
-    // Create Room
     createRoomButton.addEventListener('click', () => {
-      socket.send(JSON.stringify({ type: 'create-room' }));
+      socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim() }));
     });
 
-    // Join Room
-    joinRoomButton.addEventListener('click', () => {
-      if (roomIdInput.value.trim() !== "") {
-        roomId = roomIdInput.value.trim();
-        socket.send(JSON.stringify({ type: 'join-room', roomId }));
-      }
-    });
-
-    // Send Message
-    sendButton.addEventListener('click', () => {
-      if (roomId) {
-        const message = JSON.stringify({
-          type: 'message',
-          roomId,
-          user: nameInput.value.trim(),
-          text: messageInput.value.trim()
-        });
-        socket.send(message);
-      }
-    });
-
-    // Send Message on Enter Key
-    messageInput.addEventListener('keypress', (event) => {
-      if (event.key === 'Enter') sendButton.click();
-    });
+    function joinRoom(roomId) {
+      window.location.href = `/chatroom?roomId=${roomId}`;
+    }
   </script>
-
 </body>
 </html>
