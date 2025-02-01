@@ -65,7 +65,7 @@
     const roomIdInput = document.getElementById('room-id');
     const currentRoomDisplay = document.getElementById('current-room');
 
-    let socket = new WebSocket('ws://localhost:3000');
+    let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
     let roomId = null;
 
     socket.onmessage = (event) => {
