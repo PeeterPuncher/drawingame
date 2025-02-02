@@ -9,26 +9,9 @@ const wss = new WebSocket.Server({ server });
 
 app.use(express.static('public'));
 
-const rooms = {}; // { roomId: { name, clients: Set } }
-
-function generateRoomCode() {
+function generateRoomCode()
+{
   return Math.floor(10000 + Math.random() * 90000).toString();
-}
-
-function updateLobby() {
-  const roomList = Object.entries(rooms).map(([roomId, room]) => ({
-    roomId,
-    name: room.name,
-    players: room.clients.size,
-  }));
-
-  console.log('Broadcasting lobby update:', roomList); // Log the room list being sent
-
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ type: 'update-lobby', rooms: roomList }));
-    }
-  });
 }
 
 wss.on('connection', (ws) =>
@@ -40,78 +23,43 @@ wss.on('connection', (ws) =>
     const data = JSON.parse(message);
     console.log('Message received from client:', data);
 
+////////////////////////////////////////////////////////////////////////////////////////////
+
     if (data.type == 'get-lobby')
     {
-      updateLobby(); // Send the latest room list to the client
+      // Send the latest room list to the client
+
     }
+
+////////////////////////////////////////////////////////////////////////////////////////////
 
     else if (data.type == 'create-room')
     {
-      let roomId;
+      // Create a new room and send the room code to the client
 
-      while (rooms[roomId])
-      {
-        roomId = generateRoomCode();
-      }
-
-      rooms[roomId] = { name: data.roomName || `Room ${roomId}`, clients: new Set() };
-      ws.roomId = roomId;
-      rooms[roomId].clients.add(ws);
-
-      console.log(`Room created: ${roomId}`);
-      ws.send(JSON.stringify({ type: 'room-created', roomId }));
-      updateLobby();
     }
+
+////////////////////////////////////////////////////////////////////////////////////////////
 
     else if (data.type == 'join-room')
     {
-      const { roomId } = data;
+      // Join a room and send the room code to the client
 
-      if (rooms[roomId])
-      {
-        ws.roomId = roomId;
-        rooms[roomId].clients.add(ws);
-        console.log(`Client joined room: ${roomId}`);
-        ws.send(JSON.stringify({ type: 'room-joined', roomId }));
-        updateLobby();
-      }
-      else
-      {
-        ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
-      }
     }
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
     else if (data.type == 'message')
     {
-      const { roomId, text, user } = data;
+      // Broadcast the message to all clients in the same room
 
-      if (rooms[roomId])
-      {
-        rooms[roomId].clients.forEach((client) =>
-        {
-          if (client.readyState === WebSocket.OPEN)
-          {
-            client.send(JSON.stringify({ type: 'message', user, text }));
-          }
-        });
-        console.log(`Message broadcasted in room: ${roomId}`);
-      }
     }
+
   });
 
   ws.on('close', () =>
   {
-    console.log('Client disconnected');
-
-    if (ws.roomId && rooms[ws.roomId])
-    {
-      rooms[ws.roomId].clients.delete(ws);
-      if (rooms[ws.roomId].clients.size == 0)
-      {
-        delete rooms[ws.roomId];
-        console.log(`Room deleted: ${ws.roomId}`);
-      }
-      updateLobby();
-    }
+    // Remove the client from the room
   });
 });
 

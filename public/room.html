@@ -30,14 +30,17 @@
 
     let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
 
-    socket.onopen = () => {
+    socket.onopen = () =>
+    {
       socket.send(JSON.stringify({ type: 'join-room', roomId }));
     };
 
-    socket.onmessage = (event) => {
+    // Receive message ////////////////////////////////////////////////////////////////
+    socket.onmessage = (event) =>
+    {
       const data = JSON.parse(event.data);
 
-      if (data.type === 'message')
+      if (data.type == 'message')
       {
         console.log(data);
         const message = document.createElement('div');
@@ -47,32 +50,24 @@
       }
     };
 
-    sendButton.addEventListener('click', () => {
-        const user = nameInput.value.trim();
-        const text = messageInput.value.trim();
-        if (user && text) {
-            socket.send(JSON.stringify({ type: 'message', roomId, user, text }));
-            messageInput.value = ''; // Clear input after sending
-            console.log('Message sent:', { roomId, user, text });
-        }
+    // Send message //////////////////////////////////////////////////////////////////
+    sendButton.addEventListener('click', () => 
+    {
+        
     });
 
-    function goBack() {
+    // Leave room ////////////////////////////////////////////////////////////////////
+    function goBack()
+    {
       window.location.href = "/";
     }
 
 
-    socket.onopen = () => {
-  console.log('WebSocket connection established');
-  if (window.location.pathname === '/room') {
-    const roomId = new URLSearchParams(window.location.search).get('roomId');
-    socket.send(JSON.stringify({ type: 'join-room', roomId }));
-  }
-};
 
-socket.onclose = () => {
-  console.log('WebSocket connection closed');
-};
+
+
+
+    
 
 socket.onerror = (error) => {
   console.error('WebSocket error:', error);
