@@ -40,8 +40,21 @@ wss.on('connection', (ws) =>
             action: 'get-lobby'
         })
       })
-      .then(response => response.json())
-      .then(data => {
+      .then(response => 
+      {
+        if (!response.ok)
+        {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json'))
+        {
+          throw new Error('Response is not JSON');
+        }
+        return response.json();
+      })
+      .then(data =>
+      {
           // Send the lobby data to the client
           ws.send(JSON.stringify({ type: 'lobby', data: data }));
       });

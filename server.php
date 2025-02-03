@@ -1,6 +1,8 @@
 <?php
 require 'database.php';
 
+
+
 if ($conn)
 {
     echo json_encode('Connected to database');
@@ -37,7 +39,7 @@ if (SESSION_METHOD == 'POST')
 
         else if ($action == 'get-lobby')
         {
-            return json_encode('php says hi');
+            return json_encode(['status' => 'success', 'data' => 'php says hi']);
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
