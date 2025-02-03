@@ -28,13 +28,23 @@ wss.on('connection', (ws) =>
 
     if (data.type == 'get-lobby')
     {
-      fetch(new URL('server.php', baseUrl).toString())
-        .then(response => response.json())
-        .then(data =>
+      fetch(new URL('server.php', baseUrl).toString(), 
+      {
+        method: 'POST', // or 'GET' if you don't need to send a body
+        headers: 
         {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(
+          {
+            action: 'get-lobby'
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
           // Send the lobby data to the client
           ws.send(JSON.stringify({ type: 'lobby', data: data }));
-        });
+      });
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
