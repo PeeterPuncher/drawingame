@@ -28,7 +28,7 @@ wss.on('connection', (ws) =>
 
     if (data.type == 'get-lobby')
     {
-      fetch(URL('server.php', baseUrl).toString())
+      fetch(new URL('server.php', baseUrl).toString())
         .then(response => response.json())
         .then(data =>
         {
