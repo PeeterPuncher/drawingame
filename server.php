@@ -37,7 +37,7 @@ if (SESSION_METHOD == 'POST')
 
         else if ($action == 'get-lobby')
         {
-            
+            return json_encode('php says hi');
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
