@@ -1,6 +1,11 @@
 <?php
 require 'database.php';
 
+if ($conn)
+{
+    echo json_encode('Connected to database');
+}
+
 if (SESSION_METHOD == 'POST')
 {
     if (isset($_POST['action']))

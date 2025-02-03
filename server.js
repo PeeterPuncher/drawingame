@@ -27,8 +27,13 @@ wss.on('connection', (ws) =>
 
     if (data.type == 'get-lobby')
     {
-      // Send the latest room list to the client
-
+      fetch('server.php?type=get-lobby')
+        .then(response => response.json())
+        .then(data =>
+        {
+          // Send the lobby data to the client
+          ws.send(JSON.stringify({ type: 'lobby', data: data }));
+        });
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
