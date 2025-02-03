@@ -6,6 +6,7 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+const baseUrl = 'https://multiplayergameprojectthingycouldntcomeu.onrender.com';
 
 app.use(express.static('public'));
 
@@ -27,7 +28,7 @@ wss.on('connection', (ws) =>
 
     if (data.type == 'get-lobby')
     {
-      fetch('server.php')
+      fetch(URL('server.php', baseUrl).toString())
         .then(response => response.json())
         .then(data =>
         {
