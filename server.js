@@ -6,7 +6,7 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
-const baseUrl = 'https://gamedb.free.nf';
+const baseUrl = 'http://gamedb.free.nf';
 
 app.use(express.static('public'));
 
@@ -38,7 +38,8 @@ wss.on('connection', (ws) =>
         body: JSON.stringify(
           {
             action: 'get-lobby'
-        })
+        }),
+        agent: new (require('https').Agent)({ rejectUnauthorized: false })
       })
       .then(response => 
       {
@@ -79,7 +80,8 @@ wss.on('connection', (ws) =>
             action: 'create-room',
             room_code: roomCode,
             room_name: data.roomName
-        })
+        }),
+        agent: new (require('https').Agent)({ rejectUnauthorized: false })
       })
       .then(response => 
       {
