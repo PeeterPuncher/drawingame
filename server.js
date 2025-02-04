@@ -6,7 +6,7 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
-const baseUrl = 'https://multiplayergameprojectthingycouldntcomeu.onrender.com';
+const baseUrl = 'https://gamedb.free.nf';
 
 app.use(express.static('public'));
 
