@@ -56,7 +56,7 @@ wss.on('connection', (ws) =>
       .then(data =>
       {
           // Send the lobby data to the client
-          ws.send(JSON.stringify({ type: 'lobby', data: data }));
+          ws.send(JSON.stringify({ type: 'update-lobby', data: data }));
       });
     }
 
@@ -65,7 +65,40 @@ wss.on('connection', (ws) =>
     else if (data.type == 'create-room')
     {
       // Create a new room and send the room code to the client
+      const roomCode = generateRoomCode();
 
+      fetch(new URL('server.php', baseUrl).toString(), 
+      {
+        method: 'POST', // or 'GET' if you don't need to send a body
+        headers: 
+        {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(
+          {
+            action: 'create-room',
+            room_code: roomCode,
+            room_name: data.roomName
+        })
+      })
+      .then(response => 
+      {
+        if (!response.ok)
+        {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json'))
+        {
+          throw new Error('Response is not JSON');
+        }
+        return response.json();
+      })
+      .then(data =>
+      {
+          // Send the lobby data to the client
+          ws.send(JSON.stringify({ type: 'room-created', data: data }));
+      });
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
