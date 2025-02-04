@@ -44,13 +44,15 @@
     if (data.type == 'update-lobby')
     {
       roomList.innerHTML = '';
-      data.rooms.forEach(room => {
+      console.log(data);
+      
+      /*data.rooms.forEach(room => {
         const roomItem = document.createElement('li');
         roomItem.className = 'list-group-item d-flex justify-content-between';
         roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
                               <button class="btn btn-success" onclick="joinRoom('${room.roomId}')">Join</button>`;
         roomList.appendChild(roomItem);
-      });
+      });*/
     }
 
     // Create room
