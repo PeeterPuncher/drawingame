@@ -6,7 +6,7 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
-const baseUrl = 'http://gamedb.free.nf';
+const baseUrl = 'https://gamedb.alwaysdata.net';
 
 app.use(express.static('public'));
 
@@ -36,7 +36,7 @@ wss.on('connection', (ws) =>
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(
-          {
+        {
             action: 'get-lobby'
         }),
         agent: new (require('https').Agent)({ rejectUnauthorized: false })
