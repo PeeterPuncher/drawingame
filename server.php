@@ -63,5 +63,17 @@ if (SESSION_METHOD == 'POST')
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        else
+        {
+                return json_encode(['status' => 'error', 'data' => 'Invalid action']);   
+        }
     }
+    else
+    {
+        return json_encode(['status' => 'error', 'data' => 'Invalid request']);
+    }
+}
+else
+{
+    return json_encode(['status' => 'error', 'data' => 'Invalid request method']);
 }
