@@ -5,16 +5,18 @@ require 'database.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST')
 {
-    if (isset($_POST['action']))
+        $data = json_decode(file_get_contents("php://input"), true);
+
+    if (isset($data['action']))
     {
-        $action = $_POST['action'];
+        $action = $data['action'];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         if ($action == 'create-room')
         {
-                $room_name = $_POST['room_name'];
-                $room_code = $_POST['room_code'];
+                $room_name = $data['room_name'];
+                $room_code = $data['room_code'];
         
                 $sql = "INSERT INTO rooms (name, code) VALUES ('$room_name', '$room_code')";
         
