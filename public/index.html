@@ -31,6 +31,11 @@
 
   let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
 
+
+
+
+
+  const baseUrl = 'https://gamedb.alwaysdata.net';
   socket.onmessage = (event) => {
     console.log('Message received:', event.data);
     const data = JSON.parse(event.data);
@@ -56,6 +61,11 @@
     }
   };
 
+
+
+
+
+
   createRoomButton.addEventListener('click', () => {
     socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim() }));
     socket.send(JSON.stringify({ type: 'get-lobby' }));
@@ -69,6 +79,38 @@
   }
 
 
+      fetch(new URL('server.php', baseUrl).toString(), 
+      {
+        method: 'POST', // or 'GET' if you don't need to send a body
+        headers: 
+        {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(
+        {
+            action: 'get-lobby'
+        }),
+
+      })
+      .then(response => 
+      {
+        if (!response.ok)
+        {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json'))
+        {
+          throw new Error('Response is not JSON');
+        }
+        return response.json();
+      })
+      .then(data =>
+      {
+          // Send the lobby data to the client
+          ws.send(JSON.stringify({ type: 'update-lobby', data: data }));
+      });
+    
 
 
 

@@ -3,12 +3,7 @@ require 'database.php';
 
 
 
-if ($conn)
-{
-    echo json_encode('Connected to database');
-}
-
-if (SESSION_METHOD == 'POST')
+if ($_SERVER['REQUEST_METHOD'] == 'POST')
 {
     if (isset($_POST['action']))
     {
@@ -25,11 +20,11 @@ if (SESSION_METHOD == 'POST')
         
                 if (mysqli_query($conn, $sql))
                 {
-                        return json_encode(['status' => 'success', 'data' => $room_code]);
+                        echo json_encode(['status' => 'success', 'data' => $room_code]);
                 }
                 else
                 {
-                        return json_encode(['status' => 'error', 'data' => 'Error creating room']);
+                        echo json_encode(['status' => 'error', 'data' => 'Error creating room']);
                 }
         }
 
@@ -51,7 +46,7 @@ if (SESSION_METHOD == 'POST')
 
         else if ($action == 'get-lobby')
         {
-            return json_encode(['status' => 'success', 'data' => 'php says hi']);
+                echo json_encode(['status' => 'success', 'data' => 'php says hi']);
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -65,17 +60,17 @@ if (SESSION_METHOD == 'POST')
 
         else
         {
-                return json_encode(['status' => 'error', 'data' => 'Invalid action']);   
+                echo json_encode(['status' => 'error', 'data' => 'Invalid action']);   
         }
     }
     else
     {
-        return json_encode(['status' => 'error', 'data' => 'Invalid request']);
+        echo json_encode(['status' => 'error', 'data' => 'Invalid request']);
     }
 }
 else
 {
-    return json_encode(['status' => 'error', 'data' => 'Invalid request method']);
+        echo json_encode(['status' => 'error', 'data' => 'Invalid request method']);
 }
 
 
