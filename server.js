@@ -28,36 +28,15 @@ wss.on('connection', (ws) =>
 
     if (data.type == 'get-lobby')
     {
-      fetch(new URL('server.php', baseUrl).toString(), 
+      fetchData('get-lobby')
+      .then((responseData) => 
       {
-        method: 'POST', // or 'GET' if you don't need to send a body
-        headers: 
-        {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(
-        {
-            action: 'get-lobby'
-        }),
-        agent: new (require('https').Agent)({ rejectUnauthorized: false })
+        ws.send(JSON.stringify({ type: 'update-lobby', data: responseData }));
       })
-      .then(response => 
+      .catch((error) => 
       {
-        if (!response.ok)
-        {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json'))
-        {
-          throw new Error('Response is not JSON');
-        }
-        return response.json();
-      })
-      .then(data =>
-      {
-          // Send the lobby data to the client
-          ws.send(JSON.stringify({ type: 'update-lobby', data: data }));
+        console.error('Fetch error:', error);
+        ws.send(JSON.stringify({ type: 'error', message: error.message }));
       });
     }
 
@@ -132,3 +111,27 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 app.get('/room', (req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
 
 server.listen(3000, () => console.log('Server running on http://localhost:3000'));
+
+
+async function fetchData(action, body = {}) {
+  const url = new URL('server.php', baseUrl).toString();
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action, ...body }),
+    agent: new (require('https').Agent)({ rejectUnauthorized: false }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    throw new Error('Response is not JSON');
+  }
+
+  return response.json();
+}
