@@ -8,6 +8,8 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 const baseUrl = 'https://gamedb.alwaysdata.net';
 
+rooms = new Map(); // Map<roomCode, Set<ws>>
+
 app.use(express.static('public'));
 
 function generateRoomCode()
@@ -47,38 +49,15 @@ wss.on('connection', (ws) =>
       // Create a new room and send the room code to the client
       const roomCode = generateRoomCode();
 
-      fetch(new URL('server.php', baseUrl).toString(), 
+      fetchData('get-lobby', { room_code: roomCode, room_name: data.roomName })
+      .then((responseData) => 
       {
-        method: 'POST', // or 'GET' if you don't need to send a body
-        headers: 
-        {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(
-          {
-            action: 'create-room',
-            room_code: roomCode,
-            room_name: data.roomName
-        }),
-        agent: new (require('https').Agent)({ rejectUnauthorized: false })
+        ws.send(JSON.stringify({ type: 'update-lobby', data: responseData }));
       })
-      .then(response => 
+      .catch((error) => 
       {
-        if (!response.ok)
-        {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json'))
-        {
-          throw new Error('Response is not JSON');
-        }
-        return response.json();
-      })
-      .then(data =>
-      {
-          // Send the lobby data to the client
-          ws.send(JSON.stringify({ type: 'room-created', data: data }));
+        console.error('Fetch error:', error);
+        ws.send(JSON.stringify({ type: 'error', message: error.message }));
       });
     }
 
@@ -88,6 +67,18 @@ wss.on('connection', (ws) =>
     {
       // Join a room and send the room code to the client
 
+      if (data.type === 'join-room')
+      {
+        const { roomCode } = data;
+      
+        if (!rooms.has(roomCode)) {
+          rooms.set(roomCode, new Set());
+        }
+      
+        rooms.get(roomCode).add(ws);
+      
+        ws.send(JSON.stringify({ type: 'room-joined', roomCode }));
+      }
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
