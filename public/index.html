@@ -36,29 +36,30 @@
 
 
   const baseUrl = 'https://gamedb.alwaysdata.net';
-  socket.onmessage = (event) => {
-    console.log('Message received:', event.data);
+  socket.onmessage = (event) => 
+  {
     const data = JSON.parse(event.data);
+    const msg = data.data.data;
 
     // List all rooms
     if (data.type == 'update-lobby')
     {
       roomList.innerHTML = '';
-      console.log(data);
+      console.log(msg);
       
-      /*data.rooms.forEach(room => {
+      msg.forEach(room => {
         const roomItem = document.createElement('li');
         roomItem.className = 'list-group-item d-flex justify-content-between';
-        roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
-                              <button class="btn btn-success" onclick="joinRoom('${room.roomId}')">Join</button>`;
+        roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ?)</span> 
+                              <button class="btn btn-success" onclick="joinRoom('${room.code}')">Join</button>`;
         roomList.appendChild(roomItem);
-      });*/
+      });
     }
 
     // Create room
     else if (data.type == 'room-created')
     {
-      window.location.href = `/room?roomId=${data.roomId}`;
+      window.location.href = `/room?roomId=${data.code}`;
       socket.send(JSON.stringify({ type: 'get-lobby' }));
     }
   };

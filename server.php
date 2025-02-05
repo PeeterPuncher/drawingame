@@ -22,13 +22,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
         $action = $data['action'];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+        
         if ($action == 'create-room')
         {
                 $room_name = $data['room_name'];
                 $room_code = $data['room_code'];
         
-                $sql = "INSERT INTO rooms (name, code) VALUES ('$room_name', '$room_code')";
+                if ($room_name != "")
+                {
+                        $sql = "INSERT INTO rooms (name, code) VALUES ('$room_name', '$room_code')";
+                }
+                else
+                {
+                        $sql = "INSERT INTO rooms (name, code) VALUES ('room $room_code', '$room_code')";
+                }
+                
         
                 if (mysqli_query($conn, $sql))
                 {
@@ -42,9 +50,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        else if ($action == 'get-lobby')
+        {
+                $sql = "SELECT name, code FROM rooms";
+                $rooms = array();
+
+                $result = mysqli_query($conn, $sql);
+                while ($row = mysqli_fetch_array($result))
+                {
+                        $rooms[] = ['name' => $row['name'], 'code' => $row['code']];
+                }
+                echo json_encode(['status'=> 'success','data'=> $rooms]);
+        }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
         else if ($action == 'join-room')
         {
-
+                
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,13 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
         else if ($action == 'leave-room')
         {
 
-        }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        else if ($action == 'get-lobby')
-        {
-                echo json_encode(['status' => 'success', 'data' => 'php says hi']);
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 }
 else
 {
-        echo json_encode(['status' => 'error', 'data' => 'Invalid request method']);
+        echo json_encode(['status'=> 'error', 'data'=> 'Invalid request']);
 }
 
 
+mysqli_close($conn);
