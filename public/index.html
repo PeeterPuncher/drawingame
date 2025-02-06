@@ -60,7 +60,8 @@
     // Create room
     else if (data.type == 'room-created')
     {
-      window.location.href = `/room?roomId=${msg.code}`;
+      console.log(msg, data.type);
+      window.location.href = `/room?roomId=${msg}`;
       socket.send(JSON.stringify({ type: 'get-lobby' }));
     }
   };
