@@ -53,7 +53,7 @@ wss.on('connection', (ws) =>
       fetchData('create-room', { room_code: roomCode, room_name: data.roomName })
       .then((responseData) => 
       {
-        ws.send(JSON.stringify({ type: 'update-lobby', data: responseData }));
+        ws.send(JSON.stringify({ type: 'room-created', data: responseData }));
       })
       .catch((error) => 
       {

@@ -46,7 +46,7 @@
     if (data.type == 'update-lobby')
     {
       roomList.innerHTML = '';
-      console.log(msg);
+      console.log(msg, data.type);
       
       msg.forEach(room => {
         const roomItem = document.createElement('li');
