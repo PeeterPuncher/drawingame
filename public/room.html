@@ -32,7 +32,8 @@
 
     socket.onopen = () =>
     {
-      socket.send(JSON.stringify({ type: 'join-room', roomId }));
+      console.log('Connected to the server');
+      
     };
 
     // Receive message ////////////////////////////////////////////////////////////////
