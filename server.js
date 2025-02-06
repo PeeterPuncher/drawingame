@@ -68,16 +68,15 @@ wss.on('connection', (ws) =>
     {
       // Join a room and send the room code to the client
 
-      const { roomCode } = data;
+      const roomCode = data.room_code;
+      const username = data.username;
     
       if (!rooms.has(roomCode))
       {
         rooms.set(roomCode, new Set());
       }
-    
-      
 
-      fetchData('join-room', { room_code: roomCode, user_name: data.username })
+      fetchData('join-room', { room_code: roomCode, user_name: username })
       .then((responseData) => 
       {
         rooms.get(roomCode).add(ws);
