@@ -9,6 +9,7 @@ const wss = new WebSocket.Server({ server });
 const baseUrl = 'https://gamedb.alwaysdata.net';
 
 rooms = new Map(); // Map<roomCode, Set<ws>>
+const usernames = new Map(); // Map<ws, username>
 
 app.use(express.static('public'));
 
@@ -49,7 +50,7 @@ wss.on('connection', (ws) =>
       // Create a new room and send the room code to the client
       const roomCode = generateRoomCode();
 
-      fetchData('get-lobby', { room_code: roomCode, room_name: data.roomName })
+      fetchData('create-room', { room_code: roomCode, room_name: data.roomName })
       .then((responseData) => 
       {
         ws.send(JSON.stringify({ type: 'update-lobby', data: responseData }));
