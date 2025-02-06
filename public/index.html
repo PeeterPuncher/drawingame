@@ -40,6 +40,8 @@
   socket.onmessage = (event) => 
   {
     const data = JSON.parse(event.data);
+    console.log(data);
+    
     const msg = data.data.data;
 
     // List all rooms
@@ -74,6 +76,11 @@
 // Join room from lobby
   function joinRoom(roomId)
   {
+    if (usernameInput.value.trim() == '')
+    {
+      alert('Please enter a username');
+      return;
+    }
     socket.send(JSON.stringify({ type: 'join-room' , username: usernameInput.value.trim(), room_code: roomId }));
     socket.send(JSON.stringify({ type: 'get-lobby' , username: usernameInput.value.trim() }));
     window.location.href = `/room?roomId=${roomId}`;
