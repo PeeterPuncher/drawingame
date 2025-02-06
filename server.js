@@ -68,18 +68,26 @@ wss.on('connection', (ws) =>
     {
       // Join a room and send the room code to the client
 
-      if (data.type === 'join-room')
+      const { roomCode } = data;
+    
+      if (!rooms.has(roomCode))
       {
-        const { roomCode } = data;
-      
-        if (!rooms.has(roomCode)) {
-          rooms.set(roomCode, new Set());
-        }
-      
-        rooms.get(roomCode).add(ws);
-      
-        ws.send(JSON.stringify({ type: 'room-joined', roomCode }));
+        rooms.set(roomCode, new Set());
       }
+    
+      
+
+      fetchData('join-room', { room_code: roomCode, user_name: data.username })
+      .then((responseData) => 
+      {
+        rooms.get(roomCode).add(ws);
+        ws.send(JSON.stringify({ type: 'room-joined', responseData }));
+      })
+      .catch((error) => 
+      {
+        console.error('Fetch error:', error);
+        ws.send(JSON.stringify({ type: 'error', message: error.message }));
+      });
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////

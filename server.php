@@ -67,7 +67,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
         else if ($action == 'join-room')
         {
-                
+                $room_code = $data["room_code"];
+                $user_name = $data["user_name"];
+
+                $sql = "INSERT INTO `players`(`name`, `roomId`) VALUES ('$user_name','$room_code')";
+                if (mysqli_query($conn,$sql))
+                {
+                        echo json_encode(["status"=> "success","data"=> "succesfully joined room $room_code"]);
+                }
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

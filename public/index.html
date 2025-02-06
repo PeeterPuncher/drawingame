@@ -28,6 +28,7 @@
   const roomList = document.getElementById('room-list');
   const roomNameInput = document.getElementById('room-name');
   const createRoomButton = document.getElementById('create-room');
+  const usernameInput = document.getElementById("user-name");
 
   let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
 
@@ -73,7 +74,7 @@
   function joinRoom(roomId)
   {
     window.location.href = `/room?roomId=${roomId}`;
-    socket.send(JSON.stringify({ type: 'get-lobby' }));
+    socket.send(JSON.stringify({ type: 'get-lobby' , username: usernameInput.value.trim() }));
   }
 
   socket.onopen = () =>
