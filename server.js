@@ -99,39 +99,40 @@ wss.on('connection', (ws) =>
 
   });
 
-  ws.on('close', () =>
-  {
+  ws.on('close', () => {
     const roomCode = ws.roomCode;
-    if (roomCode && rooms.has(roomCode))
-    {
+    const username = ws.username; // Assuming you store the username in the WebSocket object
+  
+    if (roomCode && rooms.has(roomCode)) {
       const roomClients = rooms.get(roomCode);
       roomClients.delete(ws); // Remove the client from the room
-
-      fetchData('leave-room', { room_code: roomCode })
-      .then((responseData) => 
-      {
-        ws.send(JSON.stringify({ type: 'left-room', data: responseData }));
-      })
-      .catch((error) => 
-      {
-        console.error('Fetch error:', error);
-        ws.send(JSON.stringify({ type: 'error', message: error.message }));
-      });
-
-      // If the room is empty, delete it
-      if (roomClients.size === 0)
-      {
-        rooms.delete(roomCode);
-        fetchData('delete-room', { room_code: roomCode })
-        .then((responseData) => 
-        {
-          ws.send(JSON.stringify({ type: 'deleted-room', data: responseData }));
+  
+      // Notify the server that the client has left the room
+      fetchData('leave-room', { room_code: roomCode, user_name: username })
+        .then((responseData) => {
+          // Broadcast to remaining clients in the room that a user has left
+          roomClients.forEach((client) => {
+            if (client.readyState === ws.OPEN) {
+              client.send(JSON.stringify({ type: 'user-left', data: { username: username, ...responseData } }));
+            }
+          });
         })
-        .catch((error) => 
-        {
+        .catch((error) => {
           console.error('Fetch error:', error);
-          ws.send(JSON.stringify({ type: 'error', message: error.message }));
         });
+  
+      // If the room is empty, delete it
+      if (roomClients.size === 0) {
+        rooms.delete(roomCode); // Remove the room from the in-memory map
+  
+        // Notify the server that the room has been deleted
+        fetchData('delete-room', { room_code: roomCode })
+          .then((responseData) => {
+            console.log('Room deleted:', roomCode);
+          })
+          .catch((error) => {
+            console.error('Fetch error:', error);
+          });
       }
     }
     console.log('Client disconnected');

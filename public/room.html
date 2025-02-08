@@ -63,7 +63,10 @@
       window.location.href = "/";
     }
 
-
+    socket.onclose = () => 
+    {
+      console.log('WebSocket closed');
+    };
 
 
 
