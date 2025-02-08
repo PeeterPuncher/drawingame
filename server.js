@@ -93,13 +93,19 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
+    // Check if the user is in a room
+    if (!ws.roomCode) {
+      console.log('Client disconnected (not in a room)');
+      return; // Exit early if the user is not in a room
+    }
+  
     const roomCode = ws.roomCode;
     const username = ws.username;
-
-    if (roomCode && rooms.has(roomCode)) {
+  
+    if (rooms.has(roomCode)) {
       const roomClients = rooms.get(roomCode);
       roomClients.delete(ws); // Remove the client from the room
-
+  
       // Notify the server that the client has left the room
       fetchData('leave-room', { user_name: username })
         .then((responseData) => {
@@ -113,11 +119,11 @@ wss.on('connection', (ws) => {
         .catch((error) => {
           console.error('Fetch error:', error);
         });
-
+  
       // If the room is empty, delete it
       if (roomClients.size === 0) {
         rooms.delete(roomCode); // Remove the room from the in-memory map
-
+  
         // Notify the server that the room has been deleted
         fetchData('delete-room', { room_code: roomCode })
           .then((responseData) => {
