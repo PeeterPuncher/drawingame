@@ -58,7 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
                 $result = mysqli_query($conn, $sql);
                 while ($row = mysqli_fetch_array($result))
                 {
-                        $rooms[] = ['name' => $row['name'], 'code' => $row['code']];
+                        $sql2 = "SELECT COUNT(roomId) FROM players WHERE roomId = $row[code]";
+                        $players = mysqli_query($conn, $sql2);
+
+                        $rooms[] = ['name' => $row['name'], 'code' => $row['code'], 'players' => mysqli_fetch_array($players)[0]];
                 }
                 echo json_encode(['status'=> 'success','data'=> $rooms]);
         }

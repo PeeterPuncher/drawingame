@@ -108,12 +108,30 @@ wss.on('connection', (ws) =>
       roomClients.delete(ws); // Remove the client from the room
 
       fetchData('leave-room', { room_code: roomCode })
+      .then((responseData) => 
+      {
+        ws.send(JSON.stringify({ type: 'left-room', data: responseData }));
+      })
+      .catch((error) => 
+      {
+        console.error('Fetch error:', error);
+        ws.send(JSON.stringify({ type: 'error', message: error.message }));
+      });
 
       // If the room is empty, delete it
       if (roomClients.size === 0)
       {
         rooms.delete(roomCode);
-        fetchData('delete-room', { room_code: roomCode });
+        fetchData('delete-room', { room_code: roomCode })
+        .then((responseData) => 
+        {
+          ws.send(JSON.stringify({ type: 'deleted-room', data: responseData }));
+        })
+        .catch((error) => 
+        {
+          console.error('Fetch error:', error);
+          ws.send(JSON.stringify({ type: 'error', message: error.message }));
+        });
       }
     }
     console.log('Client disconnected');
