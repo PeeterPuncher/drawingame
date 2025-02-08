@@ -50,9 +50,10 @@ wss.on('connection', (ws) => {
           // Add the user to the room
           rooms.get(roomCode).add(ws);
     
-          // Set the room code and username in the WebSocket object
+          // Set the room code, username, and hasJoinedRoom flag
           ws.roomCode = roomCode;
           ws.username = username;
+          ws.hasJoinedRoom = true; // Mark the user as having joined the room
     
           // Notify the client that the room was created and they have joined it
           ws.send(JSON.stringify({ type: 'room-created', data: { ...responseData, roomCode, username } }));
@@ -75,8 +76,9 @@ wss.on('connection', (ws) => {
       fetchData('join-room', { room_code: roomCode, user_name: username })
         .then((responseData) => {
           rooms.get(roomCode).add(ws); // Add the client to the room
-          ws.roomCode = roomCode; // Set the room code only when the user joins the room
+          ws.roomCode = roomCode; // Set the room code
           ws.username = username; // Set the username
+          ws.hasJoinedRoom = true; // Mark the user as having joined the room
           ws.send(JSON.stringify({ type: 'room-joined', data: responseData }));
         })
         .catch((error) => {
@@ -103,10 +105,10 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    // Check if the user is in a room
-    if (!ws.roomCode) {
+    // Check if the user has joined a room
+    if (!ws.hasJoinedRoom) {
       console.log('Client disconnected (not in a room)');
-      return; // Exit early if the user is not in a room
+      return; // Exit early if the user has not joined a room
     }
   
     const roomCode = ws.roomCode;
