@@ -40,11 +40,22 @@ wss.on('connection', (ws) => {
     else if (data.type === 'create-room') {
       // Create a new room and send the room code to the client
       const roomCode = generateRoomCode();
+      const username = data.username; // Assuming the username is sent in the message
     
       fetchData('create-room', { room_code: roomCode, room_name: data.roomName })
         .then((responseData) => {
-          rooms.set(roomCode, new Set()); // Initialize the room with an empty set of clients
-          ws.send(JSON.stringify({ type: 'room-created', data: responseData }));
+          // Initialize the room with an empty set of clients
+          rooms.set(roomCode, new Set());
+    
+          // Add the user to the room
+          rooms.get(roomCode).add(ws);
+    
+          // Set the room code and username in the WebSocket object
+          ws.roomCode = roomCode;
+          ws.username = username;
+    
+          // Notify the client that the room was created and they have joined it
+          ws.send(JSON.stringify({ type: 'room-created', data: { ...responseData, roomCode, username } }));
         })
         .catch((error) => {
           console.error('Fetch error:', error);
