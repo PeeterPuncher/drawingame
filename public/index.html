@@ -69,6 +69,11 @@
   };
 
   createRoomButton.addEventListener('click', () => {
+    if (usernameInput.value.trim() == '')
+    {
+      alert('Please enter a username');
+      return;
+    }
     socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim() }));
     socket.send(JSON.stringify({ type: 'get-lobby' }));
   });
