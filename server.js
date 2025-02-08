@@ -139,13 +139,17 @@ server.listen(3000, () => console.log('Server running on http://localhost:3000')
 
 async function fetchData(action, body = {}) {
   const url = new URL('server.php', baseUrl).toString();
+  const payload = JSON.stringify({ action, ...body });
+
+  console.log("Sending payload to PHP:", payload); // Log the payload
+
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ action, ...body }),
+      body: payload,
       agent: new https.Agent({ rejectUnauthorized: false }),
     });
 
