@@ -101,7 +101,22 @@ wss.on('connection', (ws) =>
 
   ws.on('close', () =>
   {
-    // Remove the client from the room
+    const roomCode = ws.roomCode;
+    if (roomCode && rooms.has(roomCode))
+    {
+      const roomClients = rooms.get(roomCode);
+      roomClients.delete(ws); // Remove the client from the room
+
+      fetchData('leave-room', { room_code: roomCode })
+
+      // If the room is empty, delete it
+      if (roomClients.size === 0)
+      {
+        rooms.delete(roomCode);
+        fetchData('delete-room', { room_code: roomCode });
+      }
+    }
+    console.log('Client disconnected');
   });
 });
 

@@ -85,7 +85,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
         else if ($action == 'leave-room')
         {
+                $user_name = $data["user_name"];
+                $room_code = $data["room_code"]; 
 
+                if ($user_name != "")
+                {
+                        $sql = "DELETE FROM players WHERE name = '$user_name'";
+                        if (mysqli_query($conn,$sql))
+                        {
+                                echo json_encode(["status"=> "success","data"=> "User left room"]);
+                        }
+                }
+        }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        else if ($action == "delete-room")
+        {
+                $room_code = $data["room_code"];
+
+                if ($room_code != "")
+                {
+                        $sql = "DELETE FROM rooms WHERE code = '$room_code'";
+                        if (mysqli_query($conn,$sql))
+                        {
+                                echo json_encode(["status"=> "success","data"=> "Room deleted"]);
+                        }
+                }
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
