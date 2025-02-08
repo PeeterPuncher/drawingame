@@ -139,23 +139,29 @@ server.listen(3000, () => console.log('Server running on http://localhost:3000')
 
 async function fetchData(action, body = {}) {
   const url = new URL('server.php', baseUrl).toString();
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ action, ...body }),
-    agent: new https.Agent({ rejectUnauthorized: false }),
-  });
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action, ...body }),
+      agent: new https.Agent({ rejectUnauthorized: false }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! Status: ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const text = await response.text(); // Read the response as text first
+    try {
+      const data = JSON.parse(text); // Try to parse it as JSON
+      return data;
+    } catch (error) {
+      throw new Error(`Invalid JSON response: ${text}`);
+    }
+  } catch (error) {
+    console.error('Fetch error:', error);
+    throw error;
   }
-
-  const contentType = response.headers.get('content-type');
-  if (!contentType || !contentType.includes('application/json')) {
-    throw new Error('Response is not JSON');
-  }
-
-  return response.json();
 }
