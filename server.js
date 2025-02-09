@@ -38,24 +38,17 @@ wss.on('connection', (ws) => {
     }
     ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'create-room') {
-      // Create a new room and send the room code to the client
       const roomCode = generateRoomCode();
-      const username = data.username; // Assuming the username is sent in the message
+      const username = data.username;
     
       fetchData('create-room', { room_code: roomCode, room_name: data.roomName })
         .then((responseData) => {
-          // Initialize the room with an empty set of clients
           rooms.set(roomCode, new Set());
+          ws.roomCode = roomCode; // Set the room code
+          ws.username = username; // Set the username
+          ws.hasJoinedRoom = false; // Do not set hasJoinedRoom here
     
-          // Add the user to the room
-          rooms.get(roomCode).add(ws);
-    
-          // Set the room code, username, and hasJoinedRoom flag
-          ws.roomCode = roomCode;
-          ws.username = username;
-          ws.hasJoinedRoom = true; // Mark the user as having joined the room
-    
-          // Notify the client that the room was created and they have joined it
+          console.log(`User ${username} created room ${roomCode}`); // Log the action
           ws.send(JSON.stringify({ type: 'room-created', data: { ...responseData, roomCode, username } }));
         })
         .catch((error) => {
@@ -105,10 +98,11 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    // Check if the user has joined a room
+    console.log(`Client disconnected. Room code: ${ws.roomCode}, Username: ${ws.username}, Has joined room: ${ws.hasJoinedRoom}`); // Log the state
+  
     if (!ws.hasJoinedRoom) {
       console.log('Client disconnected (not in a room)');
-      return; // Exit early if the user has not joined a room
+      return;
     }
   
     const roomCode = ws.roomCode;
@@ -116,12 +110,10 @@ wss.on('connection', (ws) => {
   
     if (rooms.has(roomCode)) {
       const roomClients = rooms.get(roomCode);
-      roomClients.delete(ws); // Remove the client from the room
+      roomClients.delete(ws);
   
-      // Notify the server that the client has left the room
       fetchData('leave-room', { user_name: username })
         .then((responseData) => {
-          // Broadcast to remaining clients in the room that a user has left
           roomClients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify({ type: 'user-left', data: { username, ...responseData } }));
@@ -132,11 +124,9 @@ wss.on('connection', (ws) => {
           console.error('Fetch error:', error);
         });
   
-      // If the room is empty, delete it
       if (roomClients.size === 0) {
-        rooms.delete(roomCode); // Remove the room from the in-memory map
+        rooms.delete(roomCode);
   
-        // Notify the server that the room has been deleted
         fetchData('delete-room', { room_code: roomCode })
           .then((responseData) => {
             console.log('Room deleted:', roomCode);
