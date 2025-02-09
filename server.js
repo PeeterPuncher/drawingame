@@ -50,6 +50,19 @@ wss.on('connection', (ws) => {
     
           console.log(`User ${username} created room ${roomCode}`); // Log the action
           ws.send(JSON.stringify({ type: 'room-created', data: { ...responseData, roomCode, username } }));
+
+          fetchData('join-room', { room_code: roomCode, user_name: username })
+          .then((responseData) => {
+            rooms.get(roomCode).add(ws); // Add the client to the room
+            ws.roomCode = roomCode; // Set the room code
+            ws.username = username; // Set the username
+            ws.hasJoinedRoom = true; // Mark the user as having joined the room
+            ws.send(JSON.stringify({ type: 'room-joined', data: responseData }));
+          })
+          .catch((error) => {
+            console.error('Fetch error:', error);
+            ws.send(JSON.stringify({ type: 'error', message: error.message }));
+          });
         })
         .catch((error) => {
           console.error('Fetch error:', error);

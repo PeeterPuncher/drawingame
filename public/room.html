@@ -33,7 +33,6 @@
     socket.onopen = () =>
     {
       console.log('WebSocket connected');
-      socket.send(JSON.stringify({ type: 'join-room', roomId }));
     };
 
     // Receive message ////////////////////////////////////////////////////////////////
