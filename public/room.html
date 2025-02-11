@@ -27,7 +27,7 @@
     const roomId = urlParams.get('roomId');
     roomInfo.innerText = `You are in Room: ${roomId}`;
 
-    let username;
+    let username = "";
 
 
     let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
@@ -52,7 +52,7 @@
       }
       else if(data.type == "joined-room")
       {
-        if (username == undefined)
+        if (username == "")
         {
           username = sessionStorage.getItem('username');
         }
@@ -69,6 +69,10 @@
     // Send message //////////////////////////////////////////////////////////////////
     sendButton.addEventListener('click', () => 
     {
+      if (username == "")
+      {
+        return;
+      }
         socket.send(JSON.stringify({
           type: 'message',
           user: username,
