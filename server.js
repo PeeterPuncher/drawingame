@@ -85,13 +85,18 @@ wss.on('connection', (ws) => {
       }
     
       fetchData('join-room', { room_code: roomCode, user_name: username })
-        .then((responseData) => {
-          rooms.get(roomCode).add(ws); // Add the client to the room
-          ws.roomCode = roomCode; // Set the room code
-          ws.username = username; // Set the username
-          ws.hasJoinedRoom = true; // Mark the user as having joined the room
-          ws.send(JSON.stringify({ type: 'room-joined', data: responseData }));
-        })
+      .then((responseData) => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            rooms.get(roomCode).add(ws); // Add the client to the room
+            ws.roomCode = roomCode; // Set the room code
+            ws.username = username; // Set the username
+            ws.hasJoinedRoom = true; // Mark the user as having joined the room
+            ws.send(JSON.stringify({ type: 'room-joined', data: responseData }));
+            resolve();
+          }, 1000); // Wait for 1 second
+        });
+      })
         .catch((error) => {
           console.error('Fetch error:', error);
           ws.send(JSON.stringify({ type: 'error', message: error.message }));
