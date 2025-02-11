@@ -61,7 +61,7 @@ wss.on('connection', (ws) => {
                 ws.hasJoinedRoom = true; // Mark the user as having joined the room
                 ws.send(JSON.stringify({ type: 'room-joined', data: responseData }));
                 resolve();
-              }, 1000); // Wait for 1 second
+              }, 2000); // Wait for 1 second
             });
           })
           .catch((error) => {
@@ -94,7 +94,7 @@ wss.on('connection', (ws) => {
             ws.hasJoinedRoom = true; // Mark the user as having joined the room
             ws.send(JSON.stringify({ type: 'room-joined', data: responseData }));
             resolve();
-          }, 1000); // Wait for 1 second
+          }, 2000); // Wait for 1 second
         });
       })
         .catch((error) => {

@@ -87,10 +87,10 @@
       return;
     }
 
+    window.location.href = `/room?roomId=${roomId}`
+    sessionStorage.setItem("username", usernameInput.value.trim());;
     socket.send(JSON.stringify({ type: 'join-room' , username: usernameInput.value.trim(), room_code: roomId }));
     socket.send(JSON.stringify({ type: 'get-lobby' , username: usernameInput.value.trim() }));
-    sessionStorage.setItem("username", usernameInput.value.trim());
-    window.location.href = `/room?roomId=${roomId}`;
   }
 
   socket.onopen = () =>
