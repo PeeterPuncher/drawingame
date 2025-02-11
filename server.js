@@ -126,8 +126,10 @@ wss.on('connection', (ws) => {
       const roomClients = rooms.get(roomCode);
       roomClients.delete(ws);
   
+      // Notify the server that the client has left the room
       fetchData('leave-room', { user_name: username })
         .then((responseData) => {
+          // Broadcast to remaining clients in the room that a user has left
           roomClients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify({ type: 'user-left', data: { username, ...responseData } }));
@@ -138,6 +140,7 @@ wss.on('connection', (ws) => {
           console.error('Fetch error:', error);
         });
   
+      // If the room is empty, delete it
       if (roomClients.size === 0) {
         rooms.delete(roomCode);
   

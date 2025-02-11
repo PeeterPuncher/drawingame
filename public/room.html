@@ -85,6 +85,13 @@
     // Leave room ////////////////////////////////////////////////////////////////////
     function goBack()
     {
+      const roomId = new URLSearchParams(window.location.search).get('roomId');
+      const username = sessionStorage.getItem('username');
+
+      // Notify the server that the user is leaving the room
+      socket.send(JSON.stringify({ type: 'leave-room', username, room_code: roomId }));
+
+      // Redirect to the lobby
       window.location.href = "/";
     }
 
