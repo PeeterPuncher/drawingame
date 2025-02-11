@@ -54,7 +54,6 @@ wss.on('connection', (ws) => {
           fetchData('join-room', { room_code: roomCode, user_name: username })
           .then((responseData) =>
           {
-            waitFor(1000); // Wait for 1 second
             rooms.get(roomCode).add(ws); // Add the client to the room
             ws.roomCode = roomCode; // Set the room code
             ws.username = username; // Set the username
