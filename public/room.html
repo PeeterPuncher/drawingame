@@ -26,15 +26,9 @@
     const urlParams = new URLSearchParams(window.location.search);
     const roomId = urlParams.get('roomId');
     roomInfo.innerText = `You are in Room: ${roomId}`;
-    
-    const username = sessionStorage.getItem("username");
-    if (username)
-    {
-      console.log("Assigned username:", username);
-    } else
-    {
-      console.error("Username not found in session storage");
-    }
+
+    let username;
+
 
     let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
 
@@ -55,6 +49,20 @@
         message.innerHTML = `<strong>${data.user}</strong>: ${data.text}`;
         messagesDiv.appendChild(message);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+      if (dataa.type == "joined-room")
+      {
+        if (username == undefined)
+        {
+          username = sessionStorage.getItem('username');
+        }
+
+        console.log(data);
+        const message = document.createElement('div');
+        message.innerHTML = `<strong>${data.user}</strong> joined the room`;
+        messagesDiv.appendChild(message);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        
       }
     };
 
