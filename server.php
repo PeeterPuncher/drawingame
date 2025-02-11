@@ -89,7 +89,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
         else if ($action == 'leave-room')
         {
                 $user_name = $data["user_name"];
-                $room_code = $data["room_code"]; 
 
                 if ($user_name != "")
                 {
