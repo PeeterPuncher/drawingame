@@ -72,26 +72,36 @@ wss.on('connection', (ws) => {
     }
     ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'join-room') {
-      // Join a room and send the room code to the client
       const roomCode = data.room_code;
       const username = data.username;
     
       if (!rooms.has(roomCode)) {
-        rooms.set(roomCode, new Set()); // Create the room if it doesn't exist
+        rooms.set(roomCode, new Set()); // Create room if it doesn't exist
       }
     
-      fetchData('join-room', { room_code: roomCode, user_name: username })
-        .then((responseData) => {
-          rooms.get(roomCode).add(ws); // Add the client to the room
-          ws.roomCode = roomCode; // Set the room code
-          ws.username = username; // Set the username
-          ws.hasJoinedRoom = true; // Mark the user as having joined the room
-          ws.send(JSON.stringify({ type: 'room-joined', data: responseData }));
-        })
-        .catch((error) => {
-          console.error('Fetch error:', error);
-          ws.send(JSON.stringify({ type: 'error', message: error.message }));
-        });
+      // Add the user to the room
+      rooms.get(roomCode).add(ws);
+    
+      // Update WebSocket properties
+      ws.roomCode = roomCode;
+      ws.username = username;
+      ws.hasJoinedRoom = true;
+    
+      // Broadcast to the room that a user joined
+      rooms.get(roomCode).forEach(client => {
+        if (client.readyState === WebSocket.OPEN && client !== ws) {
+          client.send(JSON.stringify({
+            type: 'joined-room',
+            user: username
+          }));
+        }
+      });
+    
+      // Send confirmation to the client
+      ws.send(JSON.stringify({
+        type: 'room-joined',
+        data: { room_code: roomCode, username: username }
+      }));
     }
     ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'message') {
@@ -109,6 +119,33 @@ wss.on('connection', (ws) => {
       }
     }
     ////////////////////////////////////////////////////////////////////////////////////////////
+    else if (data.type === 'leave-room') {
+      const roomCode = data.room_code;
+      const username = data.username;
+    
+      if (rooms.has(roomCode)) {
+        const roomClients = rooms.get(roomCode);
+        roomClients.delete(ws); // Remove the client
+    
+        // Broadcast that the user left
+        roomClients.forEach(client => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'user-left',
+              data: { username: username }
+            }));
+          }
+        });
+    
+        // Delete room if empty
+        if (roomClients.size === 0) {
+          rooms.delete(roomCode);
+          fetchData('delete-room', { room_code: roomCode });
+        }
+      }
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////
+   
   });
 
   ws.on('close', () => {
