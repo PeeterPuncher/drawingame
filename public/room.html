@@ -30,6 +30,8 @@ roomInfo.innerText = `You are in Room: ${roomId}`;
 
 let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
 
+
+
 // Send "join-room" request after WebSocket connects
 socket.onopen = () => {
   console.log('WebSocket connected');
@@ -74,10 +76,10 @@ function goBack() {
   window.location.href = '/';
 }
 
-    socket.onclose = () => 
-    {
-      console.log('WebSocket closed');
-    };
+socket.onclose = () => 
+{
+  console.log('WebSocket closed');
+};
 
 
 

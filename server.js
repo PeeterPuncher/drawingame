@@ -11,6 +11,7 @@ const baseUrl = 'https://gamedb.alwaysdata.net';
 
 const rooms = new Map(); // Map<roomCode, Set<ws>>
 const usernames = new Map(); // Map<ws, username>
+const roomTimeouts = new Map(); // Map<roomCode, timeout>
 
 app.use(express.static('public'));
 
@@ -75,14 +76,17 @@ wss.on('connection', (ws) => {
       const roomCode = data.room_code;
       const username = data.username;
     
-      if (!rooms.has(roomCode)) {
-        rooms.set(roomCode, new Set()); // Create room if it doesn't exist
+      // Cancel scheduled deletion if the room is being rejoined
+      if (roomTimeouts.has(roomCode)) {
+        clearTimeout(roomTimeouts.get(roomCode));
+        roomTimeouts.delete(roomCode);
       }
     
-      // Add the user to the room
-      rooms.get(roomCode).add(ws);
+      if (!rooms.has(roomCode)) {
+        rooms.set(roomCode, new Set());
+      }
     
-      // Update WebSocket properties
+      rooms.get(roomCode).add(ws);
       ws.roomCode = roomCode;
       ws.username = username;
       ws.hasJoinedRoom = true;
@@ -149,47 +153,44 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    console.log(`Client disconnected. Room code: ${ws.roomCode}, Username: ${ws.username}, Has joined room: ${ws.hasJoinedRoom}`); // Log the state
-  
+    console.log(`Client disconnected. Room code: ${ws.roomCode}, Username: ${ws.username}, Has joined room: ${ws.hasJoinedRoom}`);
+
     if (!ws.hasJoinedRoom) {
       console.log('Client disconnected (not in a room)');
       return;
     }
-  
+
     const roomCode = ws.roomCode;
     const username = ws.username;
-  
+
     if (rooms.has(roomCode)) {
       const roomClients = rooms.get(roomCode);
       roomClients.delete(ws);
-  
-      // Notify the server that the client has left the room
+
+      // Notify remaining users
       fetchData('leave-room', { user_name: username })
         .then((responseData) => {
-          // Broadcast to remaining clients in the room that a user has left
-          roomClients.forEach((client) => {
+          roomClients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify({ type: 'user-left', data: { username, ...responseData } }));
             }
           });
         })
-        .catch((error) => {
-          console.error('Fetch error:', error);
-        });
-  
-      // If the room is empty, delete it
+        .catch(console.error);
+
+      // Schedule room deletion only if empty
       if (roomClients.size === 0) {
-        rooms.delete(roomCode);
-  
-        fetchData('delete-room', { room_code: roomCode })
-          .then((responseData) => {
-            console.log('Room deleted:', roomCode);
-          })
-          .catch((error) => {
-            console.error('Fetch error:', error);
-          });
+        const timeoutId = setTimeout(() => {
+          rooms.delete(roomCode);
+          fetchData('delete-room', { room_code: roomCode })
+            .then(() => console.log(`Room ${roomCode} deleted after grace period`))
+            .catch(console.error);
+        }, 10000); // 10-second grace period
+
+        roomTimeouts.set(roomCode, timeoutId);
       }
     }
+
     console.log('Client disconnected');
   });
 });
