@@ -63,6 +63,38 @@ socket.onmessage = (event) => {
   }
 };
 
+// Send message when the "Send" button is clicked
+sendButton.addEventListener('click', () => {
+  sendMessage();
+});
+
+// Send message when Enter key is pressed
+messageInput.addEventListener('keypress', (event) => {
+  if (event.key === 'Enter') {
+    sendMessage();
+  }
+});
+
+function sendMessage() {
+  const message = messageInput.value.trim();
+
+  if (message === '') {
+    alert('Please enter a message');
+    return;
+  }
+
+  // Send the message to the server
+  socket.send(JSON.stringify({
+    type: 'message',
+    room_code: roomId,
+    username: username,
+    text: message
+  }));
+
+  // Clear the input field
+  messageInput.value = '';
+}
+
 // Handle "Leave Room" button click
 function goBack() {
   // Notify the server before leaving
