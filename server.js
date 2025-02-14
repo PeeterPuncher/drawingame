@@ -123,11 +123,16 @@ wss.on('connection', (ws) => {
     else if (data.type === 'message') {
       // Broadcast the message to all clients in the same room
       const roomCode = ws.roomCode;
+      const username = data.username;
+      const message = data.message;
+
       if (roomCode && rooms.has(roomCode)) {
         const roomClients = rooms.get(roomCode);
         roomClients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type: 'message', data: data.message }));
+            client.send(JSON.stringify({ 
+              type: 'message', 
+              data: {message: message, username: username},}));
           }
         });
       } else {

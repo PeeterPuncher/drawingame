@@ -49,10 +49,11 @@ socket.onopen = () => {
 // Handle incoming messages
 socket.onmessage = (event) => {
   const data = JSON.parse(event.data);
+  console.log(data);
 
   if (data.type === 'message') {
     const message = document.createElement('div');
-    message.innerHTML = `<strong>${data.user}</strong>: ${data.text}`;
+    message.innerHTML = `<strong>${data.data.username}</strong>: ${data.data.message}`;
     messagesDiv.appendChild(message);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   } else if (data.type === 'joined-room') {
