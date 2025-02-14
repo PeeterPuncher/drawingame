@@ -3,6 +3,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
 const https = require('https');
+const { text } = require('stream/consumers');
 
 const app = express();
 const server = http.createServer(app);
@@ -124,7 +125,7 @@ wss.on('connection', (ws) => {
       // Broadcast the message to all clients in the same room
       const roomCode = ws.roomCode;
       const username = data.username;
-      const message = data.message;
+      const text = data.text;
 
       if (roomCode && rooms.has(roomCode)) {
         const roomClients = rooms.get(roomCode);
@@ -132,7 +133,7 @@ wss.on('connection', (ws) => {
           if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify({ 
               type: 'message', 
-              data: {message: message, username: username},}));
+              data: {text: text, username: username},}));
           }
         });
       } else {

@@ -53,7 +53,7 @@ socket.onmessage = (event) => {
 
   if (data.type === 'message') {
     const message = document.createElement('div');
-    message.innerHTML = `<strong>${data.data.username}</strong>: ${data.data.message}`;
+    message.innerHTML = `<strong>${data.data.username}</strong>: ${data.data.text}`;
     messagesDiv.appendChild(message);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   } else if (data.type === 'joined-room') {
