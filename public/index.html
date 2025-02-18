@@ -75,7 +75,7 @@ createRoomButton.addEventListener('click', () => {
     return;
   }
   const username = usernameInput.value.trim();
-  socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim(), username: usernameInput.value.trim() }));
+  socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim(), username: username }));
   socket.send(JSON.stringify({ type: 'get-lobby' }));
 });
 
@@ -101,8 +101,7 @@ socket.onopen = () =>
 
   if (window.location.pathname === '/room')
   {
-    const roomId = new URLSearchParams(window.location.search).get('roomId');
-    socket.send(JSON.stringify({ type: 'join-room', roomId }));
+    window.location.href = `/`;
   }
 };
 
