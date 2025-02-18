@@ -36,57 +36,57 @@
 
 
 
-  const baseUrl = 'https://gamedb.alwaysdata.net';
-  socket.onmessage = (event) => 
+const baseUrl = 'https://gamedb.alwaysdata.net';
+socket.onmessage = (event) => 
+{
+  const data = JSON.parse(event.data);
+  console.log(data);
+  
+  const msg = data.data.data;
+
+  // List all rooms
+  if (data.type == 'update-lobby')
   {
-    const data = JSON.parse(event.data);
-    console.log(data);
+    roomList.innerHTML = '';
+    console.log(msg, data.type);
     
-    const msg = data.data.data;
+    msg.forEach(room => {
+      const roomItem = document.createElement('li');
+      roomItem.className = 'list-group-item d-flex justify-content-between';
+      roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
+                            <button class="btn btn-success" onclick="joinRoom('${room.code}')">Join</button>`;
+      roomList.appendChild(roomItem);
+    });
+  }
 
-    // List all rooms
-    if (data.type == 'update-lobby')
-    {
-      roomList.innerHTML = '';
-      console.log(msg, data.type);
-      
-      msg.forEach(room => {
-        const roomItem = document.createElement('li');
-        roomItem.className = 'list-group-item d-flex justify-content-between';
-        roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
-                              <button class="btn btn-success" onclick="joinRoom('${room.code}')">Join</button>`;
-        roomList.appendChild(roomItem);
-      });
-    }
-
-    // Create room
-    else if (data.type == 'room-created')
-    {
-      console.log(msg, data.type);
-      socket.send(JSON.stringify({ type: 'get-lobby' }));
-      window.location.href = `/room?roomId=${msg}`;
-    }
-  };
-
-  createRoomButton.addEventListener('click', () => {
-    if (usernameInput.value.trim() == '')
-    {
-      alert('Please enter a username');
-      return;
-    }
-    socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim(), username: usernameInput.value.trim() }));
+  // Create room
+  else if (data.type == 'room-created')
+  {
+    console.log(msg, data.type);
     socket.send(JSON.stringify({ type: 'get-lobby' }));
-  });
+    window.location.href = `/room?roomId=${msg}`;
+  }
+};
+
+createRoomButton.addEventListener('click', () => {
+  if (usernameInput.value.trim() == '')
+  {
+    alert('Please enter a username');
+    return;
+  }
+  const username = usernameInput.value.trim();
+  socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim(), username: usernameInput.value.trim() }));
+  socket.send(JSON.stringify({ type: 'get-lobby' }));
+});
 
 // Join room from lobby
 function joinRoom(roomId) {
-  const username = usernameInput.value.trim();
-
   if (!username) {
     alert('Please enter a username');
     return;
   }
 
+  const username = usernameInput.value.trim();
   // Store username in sessionStorage
   sessionStorage.setItem('username', username);
 
@@ -94,25 +94,25 @@ function joinRoom(roomId) {
   window.location.href = `/room?roomId=${roomId}`;
 }
 
-  socket.onopen = () =>
+socket.onopen = () =>
+{
+  console.log('WebSocket connection established');
+  socket.send(JSON.stringify({ type: 'get-lobby' })); // Request the latest room list
+
+  if (window.location.pathname === '/room')
   {
-    console.log('WebSocket connection established');
-    socket.send(JSON.stringify({ type: 'get-lobby' })); // Request the latest room list
+    const roomId = new URLSearchParams(window.location.search).get('roomId');
+    socket.send(JSON.stringify({ type: 'join-room', roomId }));
+  }
+};
 
-    if (window.location.pathname === '/room')
-    {
-      const roomId = new URLSearchParams(window.location.search).get('roomId');
-      socket.send(JSON.stringify({ type: 'join-room', roomId }));
-    }
-  };
+socket.onclose = () => {
+  console.log('WebSocket connection closed');
+};
 
-  socket.onclose = () => {
-    console.log('WebSocket connection closed');
-  };
-
-  socket.onerror = (error) => {
-    console.error('WebSocket error:', error);
-  };
-  </script>
+socket.onerror = (error) => {
+  console.error('WebSocket error:', error);
+};
+</script>
 </body>
 </html>
