@@ -35,6 +35,7 @@ let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onren
 // Send "join-room" request after WebSocket connects
 socket.onopen = () => {
   console.log('WebSocket connected');
+  console.log(username);
   
   // Send "join-room" request with username and roomId
   if (roomId && username) {
@@ -43,6 +44,8 @@ socket.onopen = () => {
       room_code: roomId,
       username: username
     }));
+    console.log('Joined room', roomId + ' as ' + username);
+    
   }
 };
 
