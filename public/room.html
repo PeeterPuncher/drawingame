@@ -24,7 +24,7 @@ const roomInfo = document.getElementById('room-info');
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get('roomId');
-
+const username = sessionStorage.getItem('username'); // Retrieve username
 
 roomInfo.innerText = `You are in Room: ${roomId}`;
 
@@ -33,9 +33,9 @@ let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onren
 
 
 // Send "join-room" request after WebSocket connects
-socket.onopen = () => {
+socket.onopen = () =>
+{
   console.log('WebSocket connected');
-  const username = sessionStorage.getItem('username'); // Retrieve username
   console.log(username);
   
   // Send "join-room" request with username and roomId
@@ -45,8 +45,7 @@ socket.onopen = () => {
       room_code: roomId,
       username: username
     }));
-    console.log('Joined room', roomId + ' as ' + username);
-    
+    console.log('Joined room', roomId + ' as ' + username);  
   }
 };
 

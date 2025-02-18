@@ -88,6 +88,7 @@ function joinRoom(roomId) {
 
   const username = usernameInput.value.trim();
   // Store username in sessionStorage
+  sessionStorage.clear();
   sessionStorage.setItem('username', username);
 
   // Redirect to room.html with roomId
