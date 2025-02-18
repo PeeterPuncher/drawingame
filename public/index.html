@@ -74,6 +74,9 @@ createRoomButton.addEventListener('click', () => {
     alert('Please enter a username');
     return;
   }
+  sessionStorage.clear();
+  sessionStorage.setItem('username', username);
+  
   const username = usernameInput.value.trim();
   socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim(), username: username }));
   socket.send(JSON.stringify({ type: 'get-lobby' }));
