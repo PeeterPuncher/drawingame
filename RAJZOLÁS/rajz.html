@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draw and Save with White Background</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            margin: 20px;
+        }
+        button {
+            padding: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Draw on the Canvas</h1>
+    <canvas id="drawingCanvas" width="500" height="500"></canvas>
+    <br />
+    <button id="saveButton">Save Drawing</button>
+
+    <script>
+        // Get references to the canvas and button
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const saveButton = document.getElementById('saveButton');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        // Set white background for the canvas (this will ensure the background is white when saved)
+        ctx.fillStyle = 'white';  // Set the background color to white
+        ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill the canvas with white
+
+        // Handle mouse events for drawing on the canvas
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            isDrawing = false;
+        });
+
+        // Save the drawing when the save button is clicked
+        saveButton.addEventListener('click', () => {
+            const imageData = canvas.toDataURL('image/png'); // Convert canvas to base64
+            const link = document.createElement('a'); // Create an invisible download link
+            link.href = imageData; // Set the href to the base64 image data
+            link.download = 'drawing.png'; // Set the filename for the download
+            link.click(); // Trigger the download
+        });
+    </script>
+</body>
+</html>
