@@ -160,9 +160,15 @@ wss.on('connection', (ws) => {
         });
     
         // Delete room if empty
-        if (roomClients.size === 0) {
-          rooms.delete(roomCode);
-          fetchData('delete-room', { room_code: roomCode });
+        if (roomClients.size == 0) {
+          const timeoutId = setTimeout(() => {
+            rooms.delete(roomCode);
+            fetchData('delete-room', { room_code: roomCode })
+              .then(() => console.log(`Room ${roomCode} deleted after grace period`))
+              .catch(console.error);
+          }, 3000); // 3-second grace period
+  
+          roomTimeouts.set(roomCode, timeoutId);
         }
       }
     }
