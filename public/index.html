@@ -85,12 +85,13 @@ createRoomButton.addEventListener('click', () => {
 
 // Join room from lobby
 function joinRoom(roomId) {
+  const username = usernameInput.value.trim();
+
   if (!username) {
     alert('Please enter a username');
     return;
   }
 
-  const username = usernameInput.value.trim();
   // Store username in sessionStorage
   sessionStorage.clear();
   sessionStorage.setItem('username', username);
