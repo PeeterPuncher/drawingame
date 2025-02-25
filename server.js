@@ -221,6 +221,7 @@ wss.on('connection', (ws) => {
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/room', (req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
+app.get('/canvas', (req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
 
 server.listen(3000, () => console.log('Server running on http://localhost:3000'));
 

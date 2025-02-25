@@ -1,0 +1,1 @@
+az imagedata-t kell elküldeni a szervernek, ami elvileg egyből képként el is menti a szerveren
