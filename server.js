@@ -196,7 +196,7 @@ wss.on('connection', (ws) => {
         .then((responseData) => {
           roomClients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({ type: 'user-left', data: { username, ...responseData } }));
+              client.send(JSON.stringify({ type: 'user-disconnected', data: { user: username } }));
             }
           });
         })
