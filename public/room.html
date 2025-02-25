@@ -71,7 +71,7 @@ socket.onmessage = (event) => {
   else if (data.type === 'user-left')
   {
     const message = document.createElement('div');
-    message.innerHTML = `<p style="color: #911e16"><strong>${data.user}</strong> left the room</p>`;
+    message.innerHTML = `<p style="color: #911e16"><strong>${data.data.user}</strong> left the room</p>`;
     messagesDiv.appendChild(message);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
