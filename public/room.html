@@ -54,17 +54,28 @@ socket.onmessage = (event) => {
   const data = JSON.parse(event.data);
   console.log(data);
 
-  if (data.type === 'message') {
+  if (data.type === 'message')
+  {
     const message = document.createElement('div');
     message.innerHTML = `<strong>${data.data.username}</strong>: ${data.data.text}`;
     messagesDiv.appendChild(message);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  } else if (data.type === 'joined-room') {
+  }
+  else if (data.type === 'joined-room')
+  {
     const message = document.createElement('div');
-    message.innerHTML = `<strong>${data.user}</strong> joined the room`;
+    message.innerHTML = `<p style="color: #39752f"><strong>${data.user}</strong> joined the room</p>`;
     messagesDiv.appendChild(message);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
+  else if (data.type === 'user-left')
+  {
+    const message = document.createElement('div');
+    message.innerHTML = `<p style="color: #911e16"><strong>${data.user}</strong> left the room</p>`;
+    messagesDiv.appendChild(message);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
 };
 
 // Send message when the "Send" button is clicked
