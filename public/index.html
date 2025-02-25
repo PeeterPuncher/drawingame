@@ -53,8 +53,16 @@ socket.onmessage = (event) =>
     msg.forEach(room => {
       const roomItem = document.createElement('li');
       roomItem.className = 'list-group-item d-flex justify-content-between';
+      if (msg.players == 0)
+      {
+        roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
+                            <span style="color: #911e16"">Room Empty</span>`;
+      }
+      else
+      {
       roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
                             <button class="btn btn-success" onclick="joinRoom('${room.code}')">Join</button>`;
+      }
       roomList.appendChild(roomItem);
     });
   }
