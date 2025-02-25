@@ -154,7 +154,7 @@ wss.on('connection', (ws) => {
           if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify({
               type: 'user-left',
-              data: { username: username }
+              data: { room_code: roomCode, user: username }
             }));
           }
         });
