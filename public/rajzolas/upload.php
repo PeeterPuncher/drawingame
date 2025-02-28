@@ -1,6 +1,6 @@
 <?php
 // A fájl nevét itt beállíthatjuk, vagy dinamikusan generálhatjuk
-$uploadDir = 'uploads/';
+$uploadDir = 'drawings/';
 $fileName = 'canvas_image_' . time() . '.png';
 
 if (isset($_POST['image'])) {
