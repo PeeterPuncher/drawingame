@@ -15,9 +15,39 @@
         const canvas = document.getElementById('myCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Rajzolás a canvason (példa)
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(50, 50, 150, 150);
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        // Set white background for the canvas (this will ensure the background is white when saved)
+        ctx.fillStyle = 'white';  // Set the background color to white
+        ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill the canvas with white
+        ctx.lineWidth = 2;
+
+        // Handle mouse events for drawing on the canvas
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            isDrawing = false;
+        });
         
         // Mentés gomb eseménykezelője
         document.getElementById('saveButton').addEventListener('click', function() {
