@@ -24,7 +24,7 @@
             const imageData = canvas.toDataURL('image/png');
 
             // Fetch API használata a kép elküldésére
-            fetch('upload.php', {
+            fetch('../rajzolas/upload.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
