@@ -141,6 +141,20 @@ wss.on('connection', (ws) => {
       }
     }
     ////////////////////////////////////////////////////////////////////////////////////////////
+    else if (data.type === 'save-drawing') {
+
+      const imageData = data.imageFile;
+
+      fetchData('save-drawing')
+        .then((responseData) => {
+          ws.send(JSON.stringify({ type: 'save-drawing', data: imageData }));
+        })
+        .catch((error) => {
+          console.error('Fetch error:', error);
+          ws.send(JSON.stringify({ type: 'error', message: error.message }));
+        });
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'leave-room') {
       const roomCode = data.room_code;
       const username = data.username;

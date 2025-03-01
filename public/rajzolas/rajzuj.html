@@ -23,26 +23,10 @@
             // A canvas képe PNG formátumban
             const imageData = canvas.toDataURL('image/png');
 
-            // Fetch API használata a kép elküldésére
-            fetch('../public/rajzolas/upload.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({ image: imageData })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Hiba történt a feltöltés során.');
-                }
-                return response.text();
-            })
-            .then(data => {
-                alert('A kép sikeresen feltöltve!');
-            })
-            .catch(error => {
-                alert(error.message);
-            });
+            socket.send(JSON.stringify({
+                type: 'save-drawing',
+                imageFile: imageData
+            }));
         });
 
     </script>
