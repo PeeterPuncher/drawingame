@@ -10,6 +10,7 @@
     <button id="saveButton">Mentés</button>
 
     <script>
+        let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
         // Canvas beállítása
         const canvas = document.getElementById('myCanvas');
         const ctx = canvas.getContext('2d');
