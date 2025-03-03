@@ -147,6 +147,8 @@ wss.on('connection', (ws) => {
 
       fetchData('save-drawing')
         .then((responseData) => {
+          console.log('Drawing saved:', responseData);
+          
           ws.send(JSON.stringify({ type: 'save-drawing', data: imageData }));
         })
         .catch((error) => {

@@ -118,28 +118,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-else if ($action == "save-drawing")
-{
-        // A fájl nevét itt beállíthatjuk, vagy dinamikusan generálhatjuk
-        $uploadDir = 'drawings/';
-        $fileName = 'canvas_image_' . time() . '.png';
+        else if ($action == "save-drawing")
+        {
+                // A fájl nevét itt beállíthatjuk, vagy dinamikusan generálhatjuk
+                $uploadDir = 'drawings/';
+                $fileName = 'canvas_image_' . time() . '.png';
 
-        if (isset($_POST['image'])) {
-        // A kép base64 kódolt adatainak dekódolása
-        $imageData = $_POST['image'];
+                if (isset($_POST['image']))
+                {
+                        // A kép base64 kódolt adatainak dekódolása
+                        $imageData = $_POST['image'];
 
-        // Levágjuk az adat URI prefixet (data:image/png;base64,)
-        $imageData = str_replace('data:image/png;base64,', '', $imageData);
-        $imageData = base64_decode($imageData);
+                        // Levágjuk az adat URI prefixet (data:image/png;base64,)
+                        $imageData = str_replace('data:image/png;base64,', '', $imageData);
+                        $imageData = base64_decode($imageData);
 
-        // A fájl mentése
-        file_put_contents($uploadDir . $fileName, $imageData);
+                        // A fájl mentése
+                        file_put_contents($uploadDir . $fileName, $imageData);
 
-        echo 'A kép sikeresen feltöltve!';
-        } else {
-        echo 'Nincs kép adat.';
+                        echo json_encode(["status"=> "success","data"=> $fileName]);
+                }
+                else
+                {
+                        echo json_encode(["status"=> "success","data"=> "Image upload failed"]);
+                }
         }
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
