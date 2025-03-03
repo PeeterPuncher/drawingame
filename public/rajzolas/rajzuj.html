@@ -19,57 +19,61 @@
     <canvas id="myCanvas" width="500" height="500"></canvas>
     <button id="saveButton">Mentés</button>
 
-    <script>
-        let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
-        // Canvas beállítása
-        const canvas = document.getElementById('myCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        let isDrawing = false;
-        let lastX = 0;
-        let lastY = 0;
+<script>
+let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
+socket.onopen = () =>
+{
+    console.log('WebSocket connection established');
+};
+// Canvas beállítása
+const canvas = document.getElementById('myCanvas');
+const ctx = canvas.getContext('2d');
 
-        // Set white background for the canvas (this will ensure the background is white when saved)
-        ctx.fillStyle = 'white';  // Set the background color to white
-        ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill the canvas with white
-        ctx.lineWidth = 2;
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
 
-        // Handle mouse events for drawing on the canvas
-        canvas.addEventListener('mousedown', (e) => {
-            isDrawing = true;
-            lastX = e.offsetX;
-            lastY = e.offsetY;
-        });
+// Set white background for the canvas (this will ensure the background is white when saved)
+ctx.fillStyle = 'white';  // Set the background color to white
+ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill the canvas with white
+ctx.lineWidth = 2;
 
-        canvas.addEventListener('mousemove', (e) => {
-            if (!isDrawing) return;
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(e.offsetX, e.offsetY);
-            ctx.stroke();
-            lastX = e.offsetX;
-            lastY = e.offsetY;
-        });
+// Handle mouse events for drawing on the canvas
+canvas.addEventListener('mousedown', (e) => {
+    isDrawing = true;
+    lastX = e.offsetX;
+    lastY = e.offsetY;
+});
 
-        canvas.addEventListener('mouseup', () => {
-            isDrawing = false;
-        });
+canvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+    lastX = e.offsetX;
+    lastY = e.offsetY;
+});
 
-        canvas.addEventListener('mouseout', () => {
-            isDrawing = false;
-        });
-        
-        // Mentés gomb eseménykezelője
-        document.getElementById('saveButton').addEventListener('click', function() {
-            // A canvas képe PNG formátumban
-            const imageData = canvas.toDataURL('image/png');
+canvas.addEventListener('mouseup', () => {
+    isDrawing = false;
+});
 
-            socket.send(JSON.stringify({
-                type: 'save-drawing',
-                imageFile: imageData
-            }));
-        });
+canvas.addEventListener('mouseout', () => {
+    isDrawing = false;
+});
 
-    </script>
+// Mentés gomb eseménykezelője
+document.getElementById('saveButton').addEventListener('click', function() {
+    // A canvas képe PNG formátumban
+    const imageData = canvas.toDataURL('image/png');
+
+    socket.send(JSON.stringify({
+        type: 'save-drawing',
+        imageFile: imageData
+    }));
+});
+
+</script>
 </body>
 </html>
