@@ -120,27 +120,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
         else if ($action == "save-drawing")
         {
-                // A fájl nevét itt beállíthatjuk, vagy dinamikusan generálhatjuk
+                // Directory to save drawings
                 $uploadDir = 'drawings/';
-                $fileName = 'canvas_image_' . time() . '.png';
-
-                if (isset($_POST['image']))
-                {
-                        // A kép base64 kódolt adatainak dekódolása
-                        $imageData = $_POST['image'];
-
-                        // Levágjuk az adat URI prefixet (data:image/png;base64,)
-                        $imageData = str_replace('data:image/png;base64,', '', $imageData);
-                        $imageData = base64_decode($imageData);
-
-                        // A fájl mentése
-                        file_put_contents($uploadDir . $fileName, $imageData);
-
-                        echo json_encode(["status"=> "success","data"=> $fileName]);
+        
+                // Ensure the directory exists
+                if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
                 }
-                else
-                {
-                        echo json_encode(["status"=> "error","data"=> "Image upload failed"]);
+        
+                // Generate a unique filename
+                $fileName = 'canvas_image_' . time() . '.png';
+        
+                if (isset($_POST['image'])) {
+                // Decode the base64 image data
+                $imageData = $_POST['image'];
+        
+                // Remove the data URI prefix (data:image/png;base64,)
+                $imageData = str_replace('data:image/png;base64,', '', $imageData);
+                $imageData = base64_decode($imageData);
+        
+                // Save the file
+                if (file_put_contents($uploadDir . $fileName, $imageData)) {
+                echo json_encode(["status" => "success", "data" => $fileName]);
+                } else {
+                echo json_encode(["status" => "error", "data" => "Failed to save image"]);
+                }
+                } else {
+                echo json_encode(["status" => "error", "data" => "Image data not provided"]);
                 }
         }
 

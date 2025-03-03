@@ -142,13 +142,13 @@ wss.on('connection', (ws) => {
     }
     ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'save-drawing') {
-
       const imageData = data.imageFile;
-
+    
       fetchData('save-drawing', { image: imageData })
         .then((responseData) => {
           console.log('Drawing saved:', responseData);
           
+          // Broadcast the saved drawing to other clients in the room
           ws.send(JSON.stringify({ type: 'save-drawing', data: imageData }));
         })
         .catch((error) => {
