@@ -145,7 +145,7 @@ wss.on('connection', (ws) => {
 
       const imageData = data.imageFile;
 
-      fetchData('save-drawing')
+      fetchData('save-drawing', { image: imageData })
         .then((responseData) => {
           console.log('Drawing saved:', responseData);
           
