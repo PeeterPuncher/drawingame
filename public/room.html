@@ -73,7 +73,7 @@ function setUsername(newUser)
 {
   if (newUser)
   {
-    username = document.getElementById('username').value.strip();
+    username = document.getElementById('username').value.trim();
     sessionStorage.setItem('username', username); // Save username to sessionStorage
     modal.hide();
 
