@@ -48,7 +48,6 @@ const modal = new bootstrap.Modal(document.getElementById('loginModal'));
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get('roomId');
-const username = sessionStorage.getItem('username'); // Retrieve username
 
 roomInfo.innerText = `You are in Room: ${roomId}`;
 
@@ -65,7 +64,7 @@ socket.onopen = () =>
 
 function setUsername()
 {
-  username = document.getElementById('username').value;
+  const username = document.getElementById('username').value;
   sessionStorage.setItem('username', username); // Save username to sessionStorage
   modal.hide();
 

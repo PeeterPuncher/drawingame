@@ -16,9 +16,6 @@
       <input type="text" id="room-name" class="form-control" placeholder="Room Name">
       <button class="btn btn-primary mt-2" id="create-room">Create Room</button>
     </div><hr>
-    <div class="mb-3">
-      <input type="text" id="user-name" class="form-control" placeholder="Username">
-    </div>
 
     <!-- Room List -->
     <h3>Available Rooms</h3>
@@ -29,7 +26,6 @@
   const roomList = document.getElementById('room-list');
   const roomNameInput = document.getElementById('room-name');
   const createRoomButton = document.getElementById('create-room');
-  const usernameInput = document.getElementById("user-name");
 
   let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
 
@@ -75,32 +71,15 @@ socket.onmessage = (event) =>
 };
 
 createRoomButton.addEventListener('click', () => {
-  if (usernameInput.value.trim() == '')
-  {
-    alert('Please enter a username');
-    return;
-  }
-
-  const username = usernameInput.value.trim();
   sessionStorage.clear();
-  sessionStorage.setItem('username', username);
-
   socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim(), username: username }));
   socket.send(JSON.stringify({ type: 'get-lobby' }));
 });
 
 // Join room from lobby
 function joinRoom(roomId) {
-  const username = usernameInput.value.trim();
-
-  if (!username) {
-    alert('Please enter a username');
-    return;
-  }
-
   // Store username in sessionStorage
   sessionStorage.clear();
-  sessionStorage.setItem('username', username);
 
   // Redirect to room.html with roomId
   window.location.href = `/room?roomId=${roomId}`;
