@@ -120,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
         else if ($action == "save-drawing")
         {
+                echo json_encode(["status"=> "success","data"=> "action is save-drawing"]);
                 // Directory to save drawings
                 $uploadDir = 'drawings/';
         
