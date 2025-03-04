@@ -16,11 +16,35 @@
     <button class="btn btn-secondary" onclick="goBack()">Leave Room</button>
   </div>
 
+
+
+
+
+
+
+  <div class="modal fade" id="loginModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="LoginModalLabel">Choose your username</h1>
+        </div>
+        <div class="modal-body">
+          ...
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Understood</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
 const messagesDiv = document.getElementById('messages');
 const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
 const roomInfo = document.getElementById('room-info');
+const modal = new bootstrap.Modal(document.getElementById('loginModal'));
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get('roomId');
@@ -36,11 +60,12 @@ let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onren
 socket.onopen = () =>
 {
   console.log('WebSocket connected');
-  console.log(username);
+  modal.show();
   
   // Send "join-room" request with username and roomId
   if (roomId && username) {
-    socket.send(JSON.stringify({
+    socket.send(JSON.stringify
+    ({
       type: 'join-room',
       room_code: roomId,
       username: username
