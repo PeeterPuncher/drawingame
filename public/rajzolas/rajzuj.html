@@ -38,83 +38,91 @@
 
 
 <script>
-    let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
-    socket.onopen = () =>
-    {
-        console.log('WebSocket connection established');
-    };
+   let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
+socket.onopen = () =>
+{
+    console.log('WebSocket connection established');
+};
+
+const canvas = document.getElementById('myCanvas');
+const ctx = canvas.getContext('2d');
+const colorButtons = document.querySelectorAll('.colorButton');
+const sizeButtons = document.querySelectorAll('.sizeButton');
+
+let isDrawing = false;
+let lastX = null;
+let lastY = null;
+let currentColor = "#000000";
+let currentSize = 5;
+
+// Set white background for the canvas
+ctx.fillStyle = 'white';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+ctx.strokeStyle = currentColor;
+ctx.lineWidth = currentSize;
+
+canvas.addEventListener('mousedown', (e) => {
+    isDrawing = true;
+    lastX = e.offsetX;
+    lastY = e.offsetY;
     
-    const canvas = document.getElementById('myCanvas');
-    const ctx = canvas.getContext('2d');
-    const colorButtons = document.querySelectorAll('.colorButton');
-    const sizeButtons = document.querySelectorAll('.sizeButton');
+    // Draw a single dot when clicking
+    let radius = currentSize / 2;
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, radius, 0, Math.PI * 2);
+    ctx.fillStyle = currentColor;
+    ctx.fill();
+    ctx.closePath();
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
     
-    let isDrawing = false;
-    let lastX = null;
-    let lastY = null;
-    let currentColor = "#000000";
-    let currentSize = 5;
+    let x = e.offsetX;
+    let y = e.offsetY;
+    let radius = currentSize / 2;
+    let distance = Math.hypot(x - lastX, y - lastY);
+    let step = radius / 2;
     
-    // Set white background for the canvas
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = currentColor;
-    ctx.lineWidth = currentSize;
-    
-    canvas.addEventListener('mousedown', (e) => {
-        isDrawing = true;
-        lastX = e.offsetX;
-        lastY = e.offsetY;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-        if (!isDrawing) return;
+    for (let i = 0; i < distance; i += step) {
+        let progress = i / distance;
+        let drawX = lastX + (x - lastX) * progress;
+        let drawY = lastY + (y - lastY) * progress;
         
-        let x = e.offsetX;
-        let y = e.offsetY;
-        let radius = currentSize / 2;
-        let distance = Math.hypot(x - lastX, y - lastY);
-        let step = radius / 2;
-        
-        for (let i = 0; i < distance; i += step) {
-            let progress = i / distance;
-            let drawX = lastX + (x - lastX) * progress;
-            let drawY = lastY + (y - lastY) * progress;
-            
-            ctx.beginPath();
-            ctx.arc(drawX, drawY, radius, 0, Math.PI * 2);
-            ctx.fillStyle = currentColor;
-            ctx.fill();
-            ctx.closePath();
-        }
-        
-        lastX = x;
-        lastY = y;
-    });
+        ctx.beginPath();
+        ctx.arc(drawX, drawY, radius, 0, Math.PI * 2);
+        ctx.fillStyle = currentColor;
+        ctx.fill();
+        ctx.closePath();
+    }
     
-    canvas.addEventListener('mouseup', () => {
-        isDrawing = false;
-        lastX = null;
-        lastY = null;
+    lastX = x;
+    lastY = y;
+});
+
+canvas.addEventListener('mouseup', () => {
+    isDrawing = false;
+    lastX = null;
+    lastY = null;
+});
+
+canvas.addEventListener('mouseout', () => {
+    isDrawing = false;
+    lastX = null;
+    lastY = null;
+});
+
+colorButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        currentColor = button.getAttribute('data-color');
     });
-    
-    canvas.addEventListener('mouseout', () => {
-        isDrawing = false;
-        lastX = null;
-        lastY = null;
+});
+
+sizeButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        currentSize = parseInt(button.getAttribute('data-size'));
     });
-    
-    colorButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            currentColor = button.getAttribute('data-color');
-        });
-    });
-    
-    sizeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            currentSize = parseInt(button.getAttribute('data-size'));
-        });
-    });
+});
 
 // Mentés gomb eseménykezelője
 document.getElementById('saveButton').addEventListener('click', function() {
