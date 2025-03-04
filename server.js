@@ -11,7 +11,6 @@ const wss = new WebSocket.Server({ server });
 const baseUrl = 'https://gamedb.alwaysdata.net';
 
 const rooms = new Map(); // Map<roomCode, Set<ws>>
-const usernames = new Map(); // Map<ws, username>
 const roomTimeouts = new Map(); // Map<roomCode, timeout>
 
 app.use(express.static('public'));
@@ -46,20 +45,15 @@ wss.on('connection', (ws) => {
       fetchData('create-room', { room_code: roomCode, room_name: data.roomName })
         .then((responseData) => {
           rooms.set(roomCode, new Set());
-          ws.roomCode = roomCode; // Set the room code
-          ws.username = username; // Set the username
-          ws.hasJoinedRoom = false; // Do not set hasJoinedRoom here
     
-          console.log(`User ${username} created room ${roomCode}`); // Log the action
-          ws.send(JSON.stringify({ type: 'room-created', data: { ...responseData, roomCode, username } }));
+          console.log(`Created room ${roomCode}`); // Log the action
+          ws.send(JSON.stringify({ type: 'room-created', data: { ...responseData, roomCode} }));
 
           fetchData('join-room', { room_code: roomCode, user_name: username })
           .then((responseData) =>
           {
             rooms.get(roomCode).add(ws); // Add the client to the room
             ws.roomCode = roomCode; // Set the room code
-            ws.username = username; // Set the username
-            ws.hasJoinedRoom = true; // Mark the user as having joined the room
             ws.send(JSON.stringify({ type: 'room-joined', data: responseData }));
           })
           .catch((error) => {

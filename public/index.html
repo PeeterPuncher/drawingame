@@ -72,7 +72,7 @@ socket.onmessage = (event) =>
 
 createRoomButton.addEventListener('click', () => {
   sessionStorage.clear();
-  socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim(), username: username }));
+  socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim()}));
   socket.send(JSON.stringify({ type: 'get-lobby' }));
 });
 
