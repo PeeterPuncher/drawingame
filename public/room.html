@@ -33,7 +33,7 @@
           <input type="text" id="username" class="form-control mb-2" placeholder="Enter your username...">
         </div>
         <div class="modal-footer text-center">
-          <button type="button" class="btn btn-primary">Continue</button>
+          <button type="button" class="btn btn-primary mx-auto" onclick="setUsername()">Continue</button>
         </div>
       </div>
     </div>
@@ -61,8 +61,15 @@ socket.onopen = () =>
 {
   console.log('WebSocket connected');
   modal.show();
+};
 
-  // Send "join-room" request with username and roomId
+function setUsername()
+{
+  username = document.getElementById('username').value;
+  sessionStorage.setItem('username', username); // Save username to sessionStorage
+  modal.hide();
+
+  // Send "join-room" request
   if (roomId && username) {
     socket.send(JSON.stringify
     ({
@@ -72,7 +79,11 @@ socket.onopen = () =>
     }));
     console.log('Joined room', roomId + ' as ' + username);  
   }
-};
+  else
+  {
+    alert('Invalid room ID or username <br><button class="btn btn-secondary">Back to Home Page</button>');
+  }
+}
 
 // Handle incoming messages
 socket.onmessage = (event) => {
