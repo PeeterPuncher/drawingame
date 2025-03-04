@@ -78,7 +78,7 @@ function setUsername(newUser)
     modal.hide();
 
     // Send "join-room" request
-    if (roomId && username) {
+    if (roomId && username != '') {
       socket.send(JSON.stringify
       ({
         type: 'join-room',
@@ -89,7 +89,8 @@ function setUsername(newUser)
     }
     else
     {
-      alert('Invalid room ID or username <br><button class="btn btn-secondary">Back to Home Page</button>');
+      alert('Invalid room ID or username');
+      window.location.href = '/';
     }
   }
   else
