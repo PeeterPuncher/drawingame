@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Room</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -16,15 +17,37 @@
     <button class="btn btn-secondary" onclick="goBack()">Leave Room</button>
   </div>
 
+
+
+
+
+
+
+  <div class="modal fade" id="loginModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="LoginModalLabel">Choose your username</h1>
+        </div>
+        <div class="modal-body text-center">
+          <input type="text" id="username" class="form-control mb-2" placeholder="Enter your username...">
+        </div>
+        <div class="modal-footer text-center">
+          <button type="button" class="btn btn-primary mx-auto" onclick="setUsername()">Continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
 const messagesDiv = document.getElementById('messages');
 const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
 const roomInfo = document.getElementById('room-info');
+const modal = new bootstrap.Modal(document.getElementById('loginModal'));
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get('roomId');
-const username = sessionStorage.getItem('username'); // Retrieve username
 
 roomInfo.innerText = `You are in Room: ${roomId}`;
 
@@ -36,18 +59,30 @@ let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onren
 socket.onopen = () =>
 {
   console.log('WebSocket connected');
-  console.log(username);
-  
-  // Send "join-room" request with username and roomId
+  modal.show();
+};
+
+function setUsername()
+{
+  const username = document.getElementById('username').value;
+  sessionStorage.setItem('username', username); // Save username to sessionStorage
+  modal.hide();
+
+  // Send "join-room" request
   if (roomId && username) {
-    socket.send(JSON.stringify({
+    socket.send(JSON.stringify
+    ({
       type: 'join-room',
       room_code: roomId,
       username: username
     }));
     console.log('Joined room', roomId + ' as ' + username);  
   }
-};
+  else
+  {
+    alert('Invalid room ID or username <br><button class="btn btn-secondary">Back to Home Page</button>');
+  }
+}
 
 // Handle incoming messages
 socket.onmessage = (event) => {

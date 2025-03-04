@@ -245,7 +245,14 @@ async function fetchData(action, body = {}) {
   const url = new URL('server.php', baseUrl).toString();
   const payload = JSON.stringify({ action, ...body });
 
-  console.log("Sending payload to PHP:", payload); // Log the payload
+  if (action != "save-drawing")
+  {
+    console.log("Sending payload to PHP:", payload); // Log the payload
+  }
+  else
+  {
+    console.log("Sending drawing to PHP");
+  }
 
   try {
     const response = await fetch(url, {
