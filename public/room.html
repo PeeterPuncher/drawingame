@@ -33,7 +33,7 @@
           <input type="text" id="username" class="form-control mb-2" placeholder="Enter your username...">
         </div>
         <div class="modal-footer text-center">
-          <button type="button" class="btn btn-primary mx-auto" onclick="setUsername()">Continue</button>
+          <button type="button" class="btn btn-primary mx-auto" onclick="setUsername(true)">Continue</button>
         </div>
       </div>
     </div>
@@ -48,6 +48,7 @@ const modal = new bootstrap.Modal(document.getElementById('loginModal'));
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get('roomId');
+let username = '';
 
 roomInfo.innerText = `You are in Room: ${roomId}`;
 
@@ -59,28 +60,41 @@ let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onren
 socket.onopen = () =>
 {
   console.log('WebSocket connected');
+  if (sessionStorage.getItem('username'))
+  {
+    username = sessionStorage.getItem('username');
+    console.log('Username from sessionStorage:', username);
+    setUsername(false);
+  }
   modal.show();
 };
 
-function setUsername()
+function setUsername(newUser)
 {
-  const username = document.getElementById('username').value;
-  sessionStorage.setItem('username', username); // Save username to sessionStorage
-  modal.hide();
+  if (newUser)
+  {
+    username = document.getElementById('username').value.strip();
+    sessionStorage.setItem('username', username); // Save username to sessionStorage
+    modal.hide();
 
-  // Send "join-room" request
-  if (roomId && username) {
-    socket.send(JSON.stringify
-    ({
-      type: 'join-room',
-      room_code: roomId,
-      username: username
-    }));
-    console.log('Joined room', roomId + ' as ' + username);  
+    // Send "join-room" request
+    if (roomId && username) {
+      socket.send(JSON.stringify
+      ({
+        type: 'join-room',
+        room_code: roomId,
+        username: username
+      }));
+      console.log('Joined room', roomId + ' as ' + username);  
+    }
+    else
+    {
+      alert('Invalid room ID or username <br><button class="btn btn-secondary">Back to Home Page</button>');
+    }
   }
   else
   {
-    alert('Invalid room ID or username <br><button class="btn btn-secondary">Back to Home Page</button>');
+    username = sessionStorage.getItem('username');
   }
 }
 
