@@ -32,8 +32,6 @@
         <div class="col-3 text-start mt-3">
             <button class="sizeButton" data-size="5">Vékony</button>
             <button class="sizeButton" data-size="20">Vastag</button>
-            <button id="fillModeButton" style="background-color: yellow;">Kitöltés</button>
-
             <br>
             <button id="canvasClear" style="background-color: red;" onclick="canvasClear()">Törlés</button>
             <button id="saveButton" style="background-color: aqua;">Mentés</button>
@@ -41,6 +39,7 @@
     </div>
 
 
+<<<<<<< HEAD
     <script>
         let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
      socket.onopen = () =>
@@ -181,6 +180,114 @@
          }));
      });
     
+=======
+<script>
+   let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
+socket.onopen = () =>
+{
+    console.log('WebSocket connection established');
+};
+
+const canvas = document.getElementById('myCanvas');
+const ctx = canvas.getContext('2d');
+const colorButtons = document.querySelectorAll('.colorButton');
+const sizeButtons = document.querySelectorAll('.sizeButton');
+
+let isDrawing = false;
+let lastX = null;
+let lastY = null;
+let currentColor = "#000000";
+let currentSize = 5;
+
+// Set white background for the canvas
+ctx.fillStyle = 'white';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+ctx.strokeStyle = currentColor;
+ctx.lineWidth = currentSize;
+
+canvas.addEventListener('mousedown', (e) => {
+    isDrawing = true;
+    lastX = e.offsetX;
+    lastY = e.offsetY;
+    
+    // Draw a single dot when clicking
+    let radius = currentSize / 2;
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, radius, 0, Math.PI * 2);
+    ctx.fillStyle = currentColor;
+    ctx.fill();
+    ctx.closePath();
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    
+    let x = e.offsetX;
+    let y = e.offsetY;
+    let radius = currentSize / 2;
+    let distance = Math.hypot(x - lastX, y - lastY);
+    let step = radius / 2;
+    
+    for (let i = 0; i < distance; i += step) {
+        let progress = i / distance;
+        let drawX = lastX + (x - lastX) * progress;
+        let drawY = lastY + (y - lastY) * progress;
+        
+        ctx.beginPath();
+        ctx.arc(drawX, drawY, radius, 0, Math.PI * 2);
+        ctx.fillStyle = currentColor;
+        ctx.fill();
+        ctx.closePath();
+    }
+    
+    lastX = x;
+    lastY = y;
+});
+
+canvas.addEventListener('mouseup', () => {
+    isDrawing = false;
+    lastX = null;
+    lastY = null;
+});
+
+canvas.addEventListener('mouseout', () => {
+    isDrawing = false;
+    lastX = null;
+    lastY = null;
+});
+
+colorButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        currentColor = button.getAttribute('data-color');
+    });
+});
+
+sizeButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        currentSize = parseInt(button.getAttribute('data-size'));
+    });
+});
+
+function canvasClear()
+{
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = currentSize;
+}
+
+// Mentés gomb eseménykezelője
+document.getElementById('saveButton').addEventListener('click', function() {
+    // A canvas képe PNG formátumban
+    const imageData = canvas.toDataURL('image/png');
+
+    socket.send(JSON.stringify({
+        type: 'save-drawing',
+        imageFile: imageData
+    }));
+});
+
+>>>>>>> parent of 3f2c8d2 (fatal módosítás)
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
