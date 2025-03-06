@@ -189,10 +189,10 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     console.log(`Client disconnected. Room code: ${ws.roomCode}, Username: ${ws.username}, Has joined room: ${ws.hasJoinedRoom}`);
 
-    /*if (!ws.hasJoinedRoom) {
+    if (!ws.hasJoinedRoom) {
       console.log('Client disconnected (not in a room)');
       return;
-    }*/
+    }
 
     const roomCode = ws.roomCode;
     const username = ws.username;
