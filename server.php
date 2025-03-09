@@ -61,14 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
                         $sql2 = "SELECT COUNT(roomId) FROM players WHERE roomId = $row[code]";
                         $players = mysqli_query($conn, $sql2);
 
-                        if (mysqli_fetch_array($players)[0] == 0)
-                        {
-                                $sqldelete = "DELETE FROM `rooms` WHERE code = $row[code]";
-                                mysqli_query($conn, $sqldelete);
-                                echo json_encode(["status"=> "success","data"=> "Room #$room_code deleted do to no players"]);
-                                continue;
-                        }
-
                         $rooms[] = ['name' => $row['name'], 'code' => $row['code'], 'players' => mysqli_fetch_array($players)[0]];
                 }
                 echo json_encode(['status'=> 'success','data'=> $rooms]);
