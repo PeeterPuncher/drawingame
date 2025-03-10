@@ -45,8 +45,9 @@ wss.on('connection', (ws) => {
     
           console.log(`Created room ${roomCode}`); // Log the action
           ws.send(JSON.stringify({ type: 'room-created', data: { ...responseData, roomCode} }));
+          getRooms();
 
-          fetchData('join-room', { room_code: roomCode, user_name: username })
+          /*fetchData('join-room', { room_code: roomCode, user_name: username })
           .then((responseData) =>
           {
             rooms.get(roomCode).add(ws); // Add the client to the room
@@ -60,9 +61,8 @@ wss.on('connection', (ws) => {
         })
         .catch((error) => {
           console.error('Fetch error:', error);
-          ws.send(JSON.stringify({ type: 'error', message: error.message }));
+          ws.send(JSON.stringify({ type: 'error', message: error.message }));*/
         });
-        getRooms(ws);
     }
     else if (data.type === 'join-room') {
       const roomCode = data.room_code;
@@ -96,7 +96,8 @@ wss.on('connection', (ws) => {
               }));
             }
           });
-    
+          getRooms();
+
           // Send confirmation
           ws.send(JSON.stringify({
             type: 'room-joined',
@@ -110,7 +111,6 @@ wss.on('connection', (ws) => {
             message: 'Failed to join room: ' + error.message
           }));
         });
-        getRooms(ws);
     }
     else if (data.type === 'message') {
       // Broadcast the message to all clients in the same room
@@ -149,7 +149,8 @@ wss.on('connection', (ws) => {
         });
     }
 ////////////////////////////////////////////////////////////////////////////////////////////
-    else if (data.type === 'leave-room') {
+    else if (data.type === 'leave-room') 
+    {
       const roomCode = data.room_code;
       const username = data.username;
     
@@ -172,18 +173,24 @@ wss.on('connection', (ws) => {
           const timeoutId = setTimeout(() => {
             rooms.delete(roomCode);
             fetchData('delete-room', { room_code: roomCode })
-              .then(() => console.log(`Room ${roomCode} deleted after grace period`))
+              .then(() => {
+                console.log(`Room ${roomCode} deleted after grace period`);
+                getRooms();
+              })
               .catch(console.error);
           }, 3000); // 3-second grace period
   
           roomTimeouts.set(roomCode, timeoutId);
         }
+        else
+        {
+          getRooms();
+        }
       }
-      getRooms(ws);
     }
-////////////////////////////////////////////////////////////////////////////////////////////
-   
   });
+
+////////////////////////////////////////////////////////////////////////////////////////////
 
   ws.on('close', () => {
     console.log(`Client disconnected. Room code: ${ws.roomCode}, Username: ${ws.username}, Has joined room: ${ws.hasJoinedRoom}`);
@@ -225,7 +232,7 @@ wss.on('connection', (ws) => {
     }
 
     console.log('Client disconnected');
-    getRooms(ws);
+    getRooms();
   });
 });
 
