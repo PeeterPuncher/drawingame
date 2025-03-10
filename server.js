@@ -26,18 +26,15 @@ wss.on('connection', (ws) => {
     const data = JSON.parse(message);
     console.log('Message received from client:', data);
 
-    ////////////////////////////////////////////////////////////////////////////////////////////
-    if (data.type === 'get-lobby') {
-      fetchData('get-lobby')
-        .then((responseData) => {
-          ws.send(JSON.stringify({ type: 'update-lobby', data: responseData }));
-        })
-        .catch((error) => {
-          console.error('Fetch error:', error);
-          ws.send(JSON.stringify({ type: 'error', message: error.message }));
-        });
+    // Set the page property based on the initial message
+    if (data.type === 'set-page') {
+      ws.page = data.page;
+      return;
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////
+
+    if (data.type === 'get-lobby') {
+      getRooms();
+    }
     else if (data.type === 'create-room') {
       const roomCode = generateRoomCode();
       const username = data.username;
@@ -65,8 +62,8 @@ wss.on('connection', (ws) => {
           console.error('Fetch error:', error);
           ws.send(JSON.stringify({ type: 'error', message: error.message }));
         });
+        getRooms(ws);
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'join-room') {
       const roomCode = data.room_code;
       const username = data.username;
@@ -113,8 +110,8 @@ wss.on('connection', (ws) => {
             message: 'Failed to join room: ' + error.message
           }));
         });
+        getRooms(ws);
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'message') {
       // Broadcast the message to all clients in the same room
       const roomCode = ws.roomCode;
@@ -132,9 +129,10 @@ wss.on('connection', (ws) => {
         });
       } else {
         ws.send(JSON.stringify({ type: 'error', message: 'You are not in a room.' }));
+
       }
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'save-drawing') {
       const imageData = data.imageFile;
     
@@ -150,7 +148,7 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'error', message: error.message }));
         });
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'leave-room') {
       const roomCode = data.room_code;
       const username = data.username;
@@ -181,8 +179,9 @@ wss.on('connection', (ws) => {
           roomTimeouts.set(roomCode, timeoutId);
         }
       }
+      getRooms(ws);
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
    
   });
 
@@ -226,6 +225,7 @@ wss.on('connection', (ws) => {
     }
 
     console.log('Client disconnected');
+    getRooms(ws);
   });
 });
 
@@ -234,6 +234,29 @@ app.get('/room', (req, res) => res.sendFile(path.join(__dirname, 'public', 'room
 app.get('/canvas', (req, res) => res.sendFile(path.join(__dirname, 'public', 'rajzolas/rajzuj.html')));
 
 server.listen(3000, () => console.log('Server running on http://localhost:3000'));
+
+async function getRooms() {
+  fetchData('get-lobby')
+  .then((responseData) => {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({ type: 'update-lobby', data: responseData }));
+      }
+    });
+  })
+  .catch((error) => {
+    console.error('Fetch error:', error);
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({ type: 'error', message: error.message }));
+      }
+    });
+  });
+}
+
+
+
+
 
 async function fetchData(action, body = {}) {
   const url = new URL('server.php', baseUrl).toString();
