@@ -88,7 +88,7 @@ function joinRoom(roomId) {
 socket.onopen = () =>
 {
   console.log('WebSocket connection established');
-  ws.send(JSON.stringify({ type: 'set-page', page: 'lobby' }));
+  socket.send(JSON.stringify({ type: 'set-page', page: 'lobby' }));
   socket.send(JSON.stringify({ type: 'get-lobby' })); // Request the latest room list
 
   if (window.location.pathname === '/room')
