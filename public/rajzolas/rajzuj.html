@@ -21,6 +21,32 @@
             -moz-user-select: none;
             -ms-user-select: none;
         }
+        .hover-div {
+            width: 300px;
+            height: 200px;
+            background-image: url('../imgs/kurzor.svg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ccc;
+        }
+
+        .hover-text {
+            opacity: 0;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .hover-div:hover {
+            background-image: none;
+        }
+
+        .hover-div:hover .hover-text {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -42,6 +68,9 @@
             <br>
             <button id="canvasClear" style="background-color: red;">Törlés</button>
             <button id="saveButton" style="background-color: aqua;">Mentés</button>
+            <div class="hover-div mt-4" style="height: 100px; width: 250px;">
+                <span class="hover-text" id="titkosSzo">Titkos szó</span>
+            </div>
         </div>
     </div>
 
