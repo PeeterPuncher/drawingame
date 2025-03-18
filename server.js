@@ -295,4 +295,4 @@ async function fetchData(action, body = {}) {
     console.error('Fetch error:', error);
     throw error;
   }
-}
+}});
