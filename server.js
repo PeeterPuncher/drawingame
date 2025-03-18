@@ -133,8 +133,7 @@ wss.on('connection', (ws) => {
         });
     }
 ////////////////////////////////////////////////////////////////////////////////////////////
-    else if (data.type === 'leave-room') 
-    {
+    else if (data.type === 'leave-room') {
       const roomCode = data.room_code;
       const username = data.username;
     
@@ -142,56 +141,59 @@ wss.on('connection', (ws) => {
         const roomClients = rooms.get(roomCode);
         roomClients.delete(ws); // Remove the client
     
-        // Broadcast that the user left
-        roomClients.forEach(client => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'user-left',
-              data: { room_code: roomCode, user: username }
-            }));
-          }
-        });
+        // Broadcast that the user left after a grace period
+        const timeoutId = setTimeout(() => {
+          roomClients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({
+                type: 'user-left',
+                data: { room_code: roomCode, user: username }
+              }));
+            }
+          });
     
-        // Delete room if empty
-        if (roomClients.size == 0) {
-          const timeoutId = setTimeout(() => {
-            rooms.delete(roomCode);
-            fetchData('delete-room', { room_code: roomCode })
-              .then(() => {
-                console.log(`Room ${roomCode} deleted after grace period`);
-                getRooms();
-              })
-              .catch(console.error);
-          }, 3000); // 3-second grace period
-  
-          roomTimeouts.set(roomCode, timeoutId);
-        }
-        else
-        {
-          getRooms();
-        }
+          // Delete room if empty
+          if (roomClients.size == 0) {
+            const deleteTimeoutId = setTimeout(() => {
+              rooms.delete(roomCode);
+              fetchData('delete-room', { room_code: roomCode })
+                .then(() => {
+                  console.log(`Room ${roomCode} deleted after grace period`);
+                  getRooms();
+                })
+                .catch(console.error);
+            }, 3000); // 3-second grace period
+    
+            roomTimeouts.set(roomCode, deleteTimeoutId);
+          } else {
+            getRooms();
+          }
+        }, 3000); // 3-second grace period
+    
+        roomTimeouts.set(roomCode, timeoutId);
       }
     }
   });
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-  ws.on('close', () => {
-    console.log(`Client disconnected. Room code: ${ws.roomCode}, Username: ${ws.username}, Has joined room: ${ws.hasJoinedRoom}`);
+ws.on('close', () => {
+  console.log(`Client disconnected. Room code: ${ws.roomCode}, Username: ${ws.username}, Has joined room: ${ws.hasJoinedRoom}`);
 
-    if (!ws.hasJoinedRoom) {
-      console.log('Client disconnected (not in a room)');
-      return;
-    }
+  if (!ws.hasJoinedRoom) {
+    console.log('Client disconnected (not in a room)');
+    return;
+  }
 
-    const roomCode = ws.roomCode;
-    const username = ws.username;
+  const roomCode = ws.roomCode;
+  const username = ws.username;
 
-    if (rooms.has(roomCode)) {
-      const roomClients = rooms.get(roomCode);
-      roomClients.delete(ws);
+  if (rooms.has(roomCode)) {
+    const roomClients = rooms.get(roomCode);
+    roomClients.delete(ws);
 
-      // Notify remaining users
+    // Notify remaining users after a grace period
+    const timeoutId = setTimeout(() => {
       fetchData('leave-room', { user_name: username })
         .then((responseData) => {
           roomClients.forEach(client => {
@@ -204,7 +206,7 @@ wss.on('connection', (ws) => {
 
       // Schedule room deletion only if empty
       if (roomClients.size == 0) {
-        const timeoutId = setTimeout(() => {
+        const deleteTimeoutId = setTimeout(() => {
           rooms.delete(roomCode);
           fetchData('delete-room', { room_code: roomCode })
             .then(() => {
@@ -214,16 +216,16 @@ wss.on('connection', (ws) => {
             .catch(console.error);
         }, 3000); // 3-second grace period
 
-        roomTimeouts.set(roomCode, timeoutId);
-      }
-      else
-      {
+        roomTimeouts.set(roomCode, deleteTimeoutId);
+      } else {
         getRooms();
       }
-    }
+    }, 3000); // 3-second grace period
 
-    console.log('Client disconnected');
-  });
+    roomTimeouts.set(roomCode, timeoutId);
+  }
+
+  console.log('Client disconnected');
 });
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
