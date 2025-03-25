@@ -98,7 +98,7 @@
               <input type="text" id="username" class="form-control mb-2" placeholder="Enter your username...">
             </div>
             <div class="modal-footer text-center">
-              <button type="button" class="btn btn-primary mx-auto" onclick="setUsername(true)">Continue</button>
+              <button type="button" class="btn btn-primary mx-auto" onclick="setUsername()">Continue</button>
             </div>
           </div>
         </div>
@@ -122,26 +122,13 @@
     let socket = new WebSocket('wss://multiplayergameprojectthingycouldntcomeu.onrender.com');
     socket.onopen = () =>
     {
-    console.log('WebSocket connected');
-    if (sessionStorage.getItem('username'))
-    {
-        username = sessionStorage.getItem('username');
-        console.log('Username from sessionStorage:', username);
-        setUsername(false);
-    }
-    else
-    {
         modal.show();
-    }
-
+        console.log('WebSocket connected');
     };
 
-    function setUsername(newUser)
-    {
-    if (newUser)
+    function setUsername()
     {
         username = document.getElementById('username').value.trim();
-        sessionStorage.setItem('username', username); // Save username to sessionStorage
         modal.hide();
 
         // Send "join-room" request
@@ -159,11 +146,6 @@
         alert('Invalid room ID or username');
         window.location.href = '/';
         }
-    }
-    else
-    {
-        username = sessionStorage.getItem('username');
-    }
     }
 
     // Handle incoming messages
