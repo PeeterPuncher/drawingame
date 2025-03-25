@@ -26,16 +26,6 @@ wss.on('connection', (ws) => {
     const data = JSON.parse(message);
     console.log('Message received from client:', data);
 
-    // Handle reconnection
-    if (data.type === 'reconnect') {
-      const { userId, roomCode } = data;
-      if (pendingLeaves.has(userId)) {
-        clearTimeout(pendingLeaves.get(userId)); // Cancel pending leave
-        pendingLeaves.delete(userId);
-        console.log(`User ${userId} reconnected, canceling leave`);
-      }
-      return;
-    }
 
     // Set the page property based on the initial message
     if (data.type === 'set-page') {
@@ -45,7 +35,10 @@ wss.on('connection', (ws) => {
 
     if (data.type === 'get-lobby') {
       getRooms();
-    } else if (data.type === 'create-room') {
+    }
+    
+    // Handle create-room
+    else if (data.type === 'create-room') {
       const roomCode = generateRoomCode();
       const username = data.username;
 
@@ -56,7 +49,10 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'room-created', data: { ...responseData, roomCode } }));
           getRooms();
         });
-    } else if (data.type === 'join-room') {
+    }
+    
+    // Handle join-room
+    else if (data.type === 'join-room') {
       const roomCode = data.room_code;
       const username = data.username;
 
@@ -103,7 +99,10 @@ wss.on('connection', (ws) => {
             message: 'Failed to join room: ' + error.message
           }));
         });
-    } else if (data.type === 'message') {
+    }
+    
+    // Handle chat messages
+    else if (data.type === 'message') {
       const roomCode = ws.roomCode;
       const username = data.username;
       const text = data.text;
@@ -121,7 +120,10 @@ wss.on('connection', (ws) => {
       } else {
         ws.send(JSON.stringify({ type: 'error', message: 'You are not in a room.' }));
       }
-    } else if (data.type === 'save-drawing') {
+    }
+
+    // Handle drawing data
+    else if (data.type === 'save-drawing') {
       const imageData = data.imageFile;
 
       fetchData('save-drawing', { image: imageData })
@@ -133,8 +135,12 @@ wss.on('connection', (ws) => {
           console.error('Fetch error:', error);
           ws.send(JSON.stringify({ type: 'error', message: error.message }));
         });
-    } else if (data.type === 'leave-room') {
-      handleLeaveRoom(ws, data.room_code, data.username);
+    }
+
+    // Handle leave-room
+    else if (data.type === 'leave-room')
+    {
+      handleActualLeave(data.room_code, data.username);
     }
   });
 
@@ -148,18 +154,11 @@ wss.on('connection', (ws) => {
 
     const roomCode = ws.roomCode;
     const username = ws.username;
-    const userId = ws.userId;
 
     if (rooms.has(roomCode)) {
       const roomClients = rooms.get(roomCode);
       roomClients.delete(ws);
-
-      // Schedule potential leave action
-      const timeoutId = setTimeout(() => {
-        handleActualLeave(roomCode, username);
-      }, 5000); // 5-second grace period
-
-      pendingLeaves.set(userId, timeoutId);
+      handleActualLeave(roomCode, username);
     }
 
     console.log('Client disconnected');
