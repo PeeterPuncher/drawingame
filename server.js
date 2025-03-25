@@ -11,6 +11,10 @@ const wss = new WebSocket.Server({ server });
 const baseUrl = 'https://gamedb.alwaysdata.net';
 const port = process.env.PORT || 4000;
 
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`)
+});
+
 const rooms = new Map(); // Map<roomCode, Set<ws>>
 const roomTimeouts = new Map(); // Map<roomCode, timeout>
 
