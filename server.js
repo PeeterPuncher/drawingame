@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 const baseUrl = 'https://gamedb.alwaysdata.net';
-const port = process.env.PORT || 4000;
+const port = 3000;
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`)
