@@ -9,6 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 const baseUrl = 'https://gamedb.alwaysdata.net';
+const port = process.env.PORT || 4000;
 
 const rooms = new Map(); // Map<roomCode, Set<ws>>
 const roomTimeouts = new Map(); // Map<roomCode, timeout>
