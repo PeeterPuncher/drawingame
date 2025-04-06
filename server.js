@@ -237,7 +237,6 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 app.get('/room', (req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
 app.get('/canvas', (req, res) => res.sendFile(path.join(__dirname, 'public', 'rajzolas/rajzuj.html')));
 
-server.listen(3000, () => console.log('Server running on http://localhost:3000'));
 
 async function getRooms() {
   fetchData('get-lobby')
