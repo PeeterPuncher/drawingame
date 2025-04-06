@@ -11,8 +11,8 @@ const wss = new WebSocket.Server({ server });
 const baseUrl = 'https://gamedb.alwaysdata.net';
 const port = 3000;
 
-app.listen(port, () => {
-  console.log(`Listening on port ${port}`)
+server.listen(port, () => {
+  console.log(`Server running on 3 redbulls and prayers, please be patient...`);
 });
 
 const rooms = new Map(); // Map<roomCode, Set<ws>>
