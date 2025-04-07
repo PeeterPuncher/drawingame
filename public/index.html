@@ -22,7 +22,7 @@
     </div><hr>
 
     <!-- Room List -->
-    <h3>Available Rooms</h3>
+    <h3>Available Rooms <button class="btn btn-success" onclick="getLobby()">Refresh</button></h3>
     <ul id="room-list" class="list-group"></ul>
   </div>
 
@@ -80,6 +80,10 @@ createRoomButton.addEventListener('click', () => {
   socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim()}));
   socket.send(JSON.stringify({ type: 'get-lobby' }));
 });
+
+function getLobby() {
+  socket.send(JSON.stringify({ type: 'get-lobby' }));
+}
 
 // Join room from lobby
 function joinRoom(roomId) {
