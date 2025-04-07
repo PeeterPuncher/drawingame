@@ -27,7 +27,7 @@ function generateRoomCode() {
 wss.on('connection', (ws) => {
   console.log('New client connected');
 
-  ws.on('message', (message) => {
+  ws.on('message', async (message) => {
     const data = JSON.parse(message);
     console.log('Message received from client:', data);
 
@@ -38,7 +38,25 @@ wss.on('connection', (ws) => {
     }
 
     if (data.type === 'get-lobby') {
-      getRooms();
+      try {
+        // Properly await the fetchData call
+        const responseData = await fetchData('get-lobby');
+        
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ 
+            type: 'update-lobby', 
+            data: responseData 
+          }));
+        }
+      } catch (error) {
+        console.error('Lobby fetch error:', error);
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ 
+            type: 'error', 
+            message: error.message || 'Failed to fetch lobby data'
+          }));
+        }
+      }
     }
     else if (data.type === 'create-room') {
       const roomCode = generateRoomCode();
@@ -154,6 +172,7 @@ wss.on('connection', (ws) => {
                 type: 'user-left',
                 data: { room_code: roomCode, user: username }
               }));
+              getRooms(); // Update the lobby for all clients
             }
           });
     
@@ -204,6 +223,7 @@ ws.on('close', () => {
           roomClients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify({ type: 'user-disconnected', data: { user: username } }));
+              getRooms(); // Update the lobby for all clients
             }
           });
         })
