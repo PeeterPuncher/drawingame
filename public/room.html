@@ -112,6 +112,13 @@
 
 <script>
 
+    let userId = localStorage.getItem("userId");
+    if (!userId) {
+    // Generálj egy új egyedi azonosítót és tárold
+    userId = crypto.randomUUID();
+    localStorage.setItem("userId", userId);
+    }
+
     const messagesDiv = document.getElementById('messages');
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
@@ -143,7 +150,8 @@
         ({
             type: 'join-room',
             room_code: roomId,
-            username: username
+            username: username,
+            userId: userId
         }));
         console.log('Joined room', roomId + ' as ' + username);  
         }
