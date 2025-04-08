@@ -74,6 +74,7 @@ wss.on('connection', (ws) => {
     else if (data.type === 'join-room') {
       const roomCode = data.room_code;
       const username = data.username;
+      const userId = data.userId;  // Új mező: kliens által tárolt egyedi azonosító
     
       // Cancel scheduled deletion if the room is being rejoined
       if (roomTimeouts.has(roomCode)) {
@@ -84,18 +85,30 @@ wss.on('connection', (ws) => {
       // First persist to database
       fetchData('join-room', { room_code: roomCode, user_name: username })
         .then((responseData) => {
-          // Only add to memory after successful DB update
+          // Initialize room if it doesn't exist
           if (!rooms.has(roomCode)) {
             rooms.set(roomCode, new Set());
           }
+          const roomClients = rooms.get(roomCode);
     
-          rooms.get(roomCode).add(ws);
+          // Ha már létezik egy kliens azonos userId-val, töröljük azt (reconnect eset)
+          for (let client of roomClients) {
+            if (client.userId === userId) {
+              roomClients.delete(client);
+              console.log(`Reconnecting user ${username} (${userId}), removed previous connection`);
+              break;
+            }
+          }
+    
+          // Add the new connection to the room
+          roomClients.add(ws);
           ws.roomCode = roomCode;
           ws.username = username;
+          ws.userId = userId;  // Tároljuk a userId-t is
           ws.hasJoinedRoom = true;
     
-          // Broadcast to room
-          rooms.get(roomCode).forEach(client => {
+          // Broadcast to room (nincs szükség, hogy a saját reconnect üzenetét is elküldjük, de itt lehetőség van értesítésre)
+          roomClients.forEach(client => {
             if (client.readyState === WebSocket.OPEN && client !== ws) {
               client.send(JSON.stringify({
                 type: 'joined-room',
@@ -104,8 +117,8 @@ wss.on('connection', (ws) => {
             }
           });
           getRooms();
-
-          // Send confirmation
+    
+          // Send confirmation to the reconnecting client
           ws.send(JSON.stringify({
             type: 'room-joined',
             data: { room_code: roomCode, username: username }
@@ -118,7 +131,7 @@ wss.on('connection', (ws) => {
             message: 'Failed to join room: ' + error.message
           }));
         });
-    }
+    }    
     else if (data.type === 'message') {
       // Broadcast the message to all clients in the same room
       const roomCode = ws.roomCode;
