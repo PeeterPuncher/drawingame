@@ -358,14 +358,23 @@ function floodFill(x, y, fillColor) {
 
 
         
-    canvas.addEventListener('mousedown', (e) => {
-        if (fillMode) {
-            floodFill(e.offsetX, e.offsetY, currentColor);
-        } else {
-            isDrawing = true;
-            [lastX, lastY] = [e.offsetX, e.offsetY];
-        }
-    });
+canvas.addEventListener('mousedown', (e) => {
+    // Get canvas dimensions and scaling factors
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    // Calculate scaled coordinates
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    if (fillMode) {
+        floodFill(x, y, currentColor);  // Use scaled coordinates
+    } else {
+        isDrawing = true;
+        [lastX, lastY] = [x, y];  // Store scaled coordinates
+    }
+});
     
 canvas.addEventListener('mousemove', (e) => {
     if (!isDrawing || fillMode) return;
