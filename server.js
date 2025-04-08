@@ -229,21 +229,27 @@ ws.on('close', () => {
     const roomClients = rooms.get(roomCode);
     roomClients.delete(ws);
 
-    // Notify remaining users after a grace period
+    // Indíts egy törlési időzítőt, de ne végezd el az adatbázis törlést azonnal!
     const timeoutId = setTimeout(() => {
+      // Itt lehet meghívni a "final deletion" vagy a "set offline" végleges műveletet.
+      // Pl.: helyettesítsd a törlést offline állapotra, vagy csak küldj értesítést:
       fetchData('leave-room', { user_name: username })
         .then((responseData) => {
           roomClients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({ type: 'user-disconnected', data: { user: username } }));
-              getRooms(); // Update the lobby for all clients
+              client.send(JSON.stringify({
+                type: 'user-disconnected',
+                data: { user: username }
+              }));
+              getRooms(); // frissítsd a lobby állapotot
             }
           });
         })
         .catch(console.error);
 
-      // Schedule room deletion only if empty
-      if (roomClients.size == 0) {
+      // Törölheted a szobából, ha már üres (vagy esetleg csak offline státusz kerül beállításra)
+      if (roomClients.size === 0) {
+        // Itt lehet a szoba törlését is késleltetni, vagy csak offline-ra állítani
         const deleteTimeoutId = setTimeout(() => {
           rooms.delete(roomCode);
           fetchData('delete-room', { room_code: roomCode })
@@ -252,19 +258,20 @@ ws.on('close', () => {
               getRooms();
             })
             .catch(console.error);
-        }, 3000); // 3-second grace period
+        }, 3000); // 3 másodperces extra késleltetés
 
         roomTimeouts.set(roomCode, deleteTimeoutId);
       } else {
         getRooms();
       }
-    }, 3000); // 3-second grace period
+    }, 3000); // 3 másodperces késleltetés
 
     roomTimeouts.set(roomCode, timeoutId);
   }
 
   console.log('Client disconnected');
 });
+
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/room', (req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
