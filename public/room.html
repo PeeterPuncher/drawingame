@@ -221,9 +221,24 @@
             readyCount = playerList.filter(p => p.ready).length;
             updatePlayerList();
             updateReadyStatusMsg();
-            // Show ready modal if not ready and not allowed to draw
-            if (!isReady && !canDraw) {
+            // If drawing is not enabled, show ready modal if not ready
+            if (!canDraw && !isReady) {
                 readyModal.show();
+            }
+            // If drawing is enabled, hide modal
+            if (canDraw) {
+                readyModal.hide();
+            }
+            // Update ready button state if already ready
+            const me = playerList.find(p => p.name === username);
+            if (me && me.ready) {
+                isReady = true;
+                readyUpBtn.disabled = true;
+                readyUpBtn.textContent = 'Waiting...';
+            } else {
+                isReady = false;
+                readyUpBtn.disabled = false;
+                readyUpBtn.textContent = 'Ready Up';
             }
         }
         // Allow drawing when enough players are ready
@@ -241,10 +256,14 @@
     function updatePlayerList() {
         playerListElem.innerHTML = '';
         playerList.forEach(p => {
+            const isMe = p.name === username;
+            const nameHtml = isMe ? `<strong>${p.name}</strong>` : p.name;
+            const readyIcon = p.ready ? '✔️' : '✗';
+            const readyColor = p.ready ? 'green' : 'red';
             const li = document.createElement('li');
             li.className = 'list-group-item d-flex justify-content-between align-items-center';
-            li.innerHTML = `<span>${p.name === username ? '<strong>' + p.name + '</strong>' : p.name}</span>
-                <span style="font-size:1.5em">${p.ready ? '!' : '✗'}</span>`;
+            li.innerHTML = `<span>${nameHtml}</span>
+                <span style="font-size:1.5em; color:${readyColor}">${readyIcon}</span>`;
             playerListElem.appendChild(li);
         });
     }
@@ -262,9 +281,7 @@
                 room_code: roomId,
                 username: username
             }));
-            isReady = true;
-            readyUpBtn.disabled = true;
-            readyUpBtn.textContent = 'Waiting...';
+            // UI will update on next room-players message
         }
     });
 

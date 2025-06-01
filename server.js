@@ -232,6 +232,20 @@ wss.on('connection', (ws) => {
         roomTimeouts.set(roomCode, timeoutId);
       }
     }
+    ////////////////////////////////////////////////////////////////////////////////////////////
+    else if (data.type === 'player-ready') {
+      const roomCode = data.room_code;
+      const username = data.username;
+      if (roomPlayers.has(roomCode)) {
+        const arr = roomPlayers.get(roomCode);
+        const player = arr.find(p => p.name === username);
+        if (player) {
+          player.ready = true;
+        }
+        broadcastRoomPlayers(roomCode);
+        checkDrawingAllowed(roomCode);
+      }
+    }
   });
 
 ////////////////////////////////////////////////////////////////////////////////////////////
