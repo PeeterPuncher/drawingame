@@ -331,44 +331,34 @@ async function getRooms() {
 
 
 async function fetchData(action, body = {}) {
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify({ action, ...body });
+  const url = new URL('server.php', baseUrl).toString();
+  const payload = JSON.stringify({ action, ...body });
 
-    const options = {
-      hostname: 'gamedb.alwaysdata.net',
-      port: 443,
-      path: '/api',
+  try {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(data),
       },
-    };
-
-    const req = https.request(options, (res) => {
-      let responseBody = '';
-
-      res.on('data', (chunk) => {
-        responseBody += chunk;
-      });
-
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(responseBody);
-          resolve(json);
-        } catch (e) {
-          reject(new Error('Invalid JSON response'));
-        }
-      });
+      body: payload,
+      agent: new https.Agent({ rejectUnauthorized: false }),
     });
 
-    req.on('error', (e) => {
-      reject(new Error(`Request error: ${e.message}`));
-    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
 
-    req.write(data);
-    req.end();
-  });
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      return data;
+    } catch (error) {
+      throw new Error(`Invalid JSON response: ${text}`);
+    }
+  } catch (error) {
+    console.error('Fetch error:', error);
+    throw error;
+  }
 }});
 
 // Broadcast player list and ready status to all clients in the room
