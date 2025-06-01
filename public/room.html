@@ -110,6 +110,25 @@
         </div>
       </div>
 
+    <!-- Ready Up Modal -->
+    <div class="modal fade" id="readyModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="readyModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="readyModalLabel">Ready Up</h1>
+          </div>
+          <div class="modal-body">
+            <div>
+              <strong>Players:</strong>
+              <ul id="player-list" class="list-group mb-2"></ul>
+            </div>
+            <div id="ready-status-msg" class="mb-2"></div>
+            <button type="button" class="btn btn-success w-100" id="ready-up-btn">Ready Up</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
 <script>
 
     let userId = localStorage.getItem("userId");
@@ -128,6 +147,15 @@
     const urlParams = new URLSearchParams(window.location.search);
     const roomId = urlParams.get('roomId');
     let username = '';
+    let isReady = false;
+    let canDraw = false;
+    let playerList = [];
+    let readyCount = 0;
+
+    const readyModal = new bootstrap.Modal(document.getElementById('readyModal'));
+    const playerListElem = document.getElementById('player-list');
+    const readyUpBtn = document.getElementById('ready-up-btn');
+    const readyStatusMsg = document.getElementById('ready-status-msg');
 
     roomInfo.innerText = `You are in Room: ${roomId}`;
 
@@ -146,50 +174,104 @@
 
         // Send "join-room" request
         if (roomId && username != '') {
-        socket.send(JSON.stringify
-        ({
-            type: 'join-room',
-            room_code: roomId,
-            username: username,
-            userId: userId
-        }));
-        console.log('Joined room', roomId + ' as ' + username);  
+            socket.send(JSON.stringify({
+                type: 'join-room',
+                room_code: roomId,
+                username: username,
+                userId: userId
+            }));
+            console.log('Joined room', roomId + ' as ' + username);  
         }
         else
         {
-        alert('Invalid room ID or username');
-        window.location.href = '/';
+            alert('Invalid room ID or username');
+            window.location.href = '/';
         }
     }
 
     // Handle incoming messages
     socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log(data);
+        const data = JSON.parse(event.data);
+        console.log(data);
 
-    if (data.type === 'message')
-    {
-        const message = document.createElement('div');
-        message.innerHTML = `<strong>${data.data.username}</strong>: ${data.data.text}`;
-        messagesDiv.appendChild(message);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-    else if (data.type === 'joined-room')
-    {
-        const message = document.createElement('div');
-        message.innerHTML = `<p style="color: #39752f"><strong>${data.user}</strong> joined the room</p>`;
-        messagesDiv.appendChild(message);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-    else if (data.type === 'user-left')
-    {
-        const message = document.createElement('div');
-        message.innerHTML = `<p style="color: #911e16"><strong>${data.data.user}</strong> left the room</p>`;
-        messagesDiv.appendChild(message);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
+        if (data.type === 'message')
+        {
+            const message = document.createElement('div');
+            message.innerHTML = `<strong>${data.data.username}</strong>: ${data.data.text}`;
+            messagesDiv.appendChild(message);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        else if (data.type === 'joined-room')
+        {
+            const message = document.createElement('div');
+            message.innerHTML = `<p style="color: #39752f"><strong>${data.user}</strong> joined the room</p>`;
+            messagesDiv.appendChild(message);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        else if (data.type === 'user-left')
+        {
+            const message = document.createElement('div');
+            message.innerHTML = `<p style="color: #911e16"><strong>${data.data.user}</strong> left the room</p>`;
+            messagesDiv.appendChild(message);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        // Handle player list and ready status updates
+        else if (data.type === 'room-players') {
+            playerList = data.players;
+            readyCount = playerList.filter(p => p.ready).length;
+            updatePlayerList();
+            updateReadyStatusMsg();
+            // Show ready modal if not ready and not allowed to draw
+            if (!isReady && !canDraw) {
+                readyModal.show();
+            }
+        }
+        // Allow drawing when enough players are ready
+        else if (data.type === 'drawing-enabled') {
+            canDraw = true;
+            readyModal.hide();
+        }
+        // Block drawing if not enough ready
+        else if (data.type === 'drawing-disabled') {
+            canDraw = false;
+            if (!isReady) readyModal.show();
+        }
     };
+
+    function updatePlayerList() {
+        playerListElem.innerHTML = '';
+        playerList.forEach(p => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.innerHTML = `<span>${p.name === username ? '<strong>' + p.name + '</strong>' : p.name}</span>
+                <span style="font-size:1.5em">${p.ready ? '!' : '✗'}</span>`;
+            playerListElem.appendChild(li);
+        });
+    }
+
+    function updateReadyStatusMsg() {
+        const total = playerList.length;
+        const needed = Math.ceil(total / 2);
+        readyStatusMsg.textContent = `Ready: ${readyCount}/${total} (Need ${needed} to start drawing)`;
+    }
+
+    readyUpBtn.addEventListener('click', () => {
+        if (!isReady) {
+            socket.send(JSON.stringify({
+                type: 'player-ready',
+                room_code: roomId,
+                username: username
+            }));
+            isReady = true;
+            readyUpBtn.disabled = true;
+            readyUpBtn.textContent = 'Waiting...';
+        }
+    });
+
+    // Block drawing if not allowed
+    function drawingAllowed() {
+        return canDraw;
+    }
 
     // Send message when the "Send" button is clicked
     sendButton.addEventListener('click', () => {
@@ -373,6 +455,7 @@ function floodFill(x, y, fillColor) {
 
         
 canvas.addEventListener('mousedown', (e) => {
+    if (!drawingAllowed()) return;
     // Get canvas dimensions and scaling factors
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;

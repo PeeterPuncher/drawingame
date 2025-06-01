@@ -16,6 +16,7 @@ server.listen(port, () => {
 });
 
 const rooms = new Map(); // Map<roomCode, Set<ws>>
+const roomPlayers = new Map(); // Map<roomCode, Array<{name, userId, ready}>>
 const roomTimeouts = new Map(); // Map<roomCode, timeout>
 
 app.use(express.static('public'));
@@ -74,7 +75,7 @@ wss.on('connection', (ws) => {
     else if (data.type === 'join-room') {
       const roomCode = data.room_code;
       const username = data.username;
-      const userId = data.userId;  // Új mező: kliens által tárolt egyedi azonosító
+      const userId = data.userId;
     
       // Cancel scheduled deletion if the room is being rejoined
       if (roomTimeouts.has(roomCode)) {
@@ -89,24 +90,36 @@ wss.on('connection', (ws) => {
           if (!rooms.has(roomCode)) {
             rooms.set(roomCode, new Set());
           }
+          if (!roomPlayers.has(roomCode)) {
+            roomPlayers.set(roomCode, []);
+          }
           const roomClients = rooms.get(roomCode);
-    
-          // Ha már létezik egy kliens azonos userId-val, töröljük azt (reconnect eset)
+          const playersArr = roomPlayers.get(roomCode);
+
+          // Remove previous client with same userId
           for (let client of roomClients) {
             if (client.userId === userId) {
               roomClients.delete(client);
-              console.log(`Reconnecting user ${username} (${userId}), removed previous connection`);
               break;
             }
           }
-    
+          // Remove previous player entry with same userId
+          const idx = playersArr.findIndex(p => p.userId === userId);
+          if (idx !== -1) playersArr.splice(idx, 1);
+
           // Add the new connection to the room
           roomClients.add(ws);
           ws.roomCode = roomCode;
           ws.username = username;
-          ws.userId = userId;  // Tároljuk a userId-t is
+          ws.userId = userId;
           ws.hasJoinedRoom = true;
-    
+
+          // Add to player list with ready=false
+          playersArr.push({ name: username, userId: userId, ready: false });
+
+          // Broadcast player list and ready status
+          broadcastRoomPlayers(roomCode);
+
           // Broadcast to room (nincs szükség, hogy a saját reconnect üzenetét is elküldjük, de itt lehetőség van értesítésre)
           roomClients.forEach(client => {
             if (client.readyState === WebSocket.OPEN && client !== ws) {
@@ -172,11 +185,18 @@ wss.on('connection', (ws) => {
     else if (data.type === 'leave-room') {
       const roomCode = data.room_code;
       const username = data.username;
-    
+
       if (rooms.has(roomCode)) {
         const roomClients = rooms.get(roomCode);
-        roomClients.delete(ws); // Remove the client
-    
+        roomClients.delete(ws);
+
+        // Remove from player list
+        if (roomPlayers.has(roomCode)) {
+          const arr = roomPlayers.get(roomCode);
+          const idx = arr.findIndex(p => p.name === username);
+          if (idx !== -1) arr.splice(idx, 1);
+        }
+
         // Broadcast that the user left after a grace period
         const timeoutId = setTimeout(() => {
           roomClients.forEach(client => {
@@ -204,6 +224,8 @@ wss.on('connection', (ws) => {
             roomTimeouts.set(roomCode, deleteTimeoutId);
           } else {
             getRooms();
+            broadcastRoomPlayers(roomCode);
+            checkDrawingAllowed(roomCode);
           }
         }, 3000); // 3-second grace period
     
@@ -228,6 +250,13 @@ ws.on('close', () => {
   if (rooms.has(roomCode)) {
     const roomClients = rooms.get(roomCode);
     roomClients.delete(ws);
+
+    // Remove from player list
+    if (roomPlayers.has(roomCode)) {
+      const arr = roomPlayers.get(roomCode);
+      const idx = arr.findIndex(p => p.name === username);
+      if (idx !== -1) arr.splice(idx, 1);
+    }
 
     // Indíts egy törlési időzítőt, de ne végezd el az adatbázis törlést azonnal!
     const timeoutId = setTimeout(() => {
@@ -263,6 +292,8 @@ ws.on('close', () => {
         roomTimeouts.set(roomCode, deleteTimeoutId);
       } else {
         getRooms();
+        broadcastRoomPlayers(roomCode);
+        checkDrawingAllowed(roomCode);
       }
     }, 3000); // 3 másodperces késleltetés
 
@@ -299,44 +330,79 @@ async function getRooms() {
 
 
 
-
-
 async function fetchData(action, body = {}) {
-  const url = new URL('server.php', baseUrl).toString();
-  const payload = JSON.stringify({ action, ...body });
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({ action, ...body });
 
-  if (action != "save-drawing")
-  {
-    console.log("Sending payload to PHP:", payload); // Log the payload
-  }
-  else
-  {
-    console.log("Sending drawing to PHP");
-  }
-
-  try {
-    const response = await fetch(url, {
+    const options = {
+      hostname: 'gamedb.alwaysdata.net',
+      port: 443,
+      path: '/api',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
       },
-      body: payload,
-      agent: new https.Agent({ rejectUnauthorized: false }),
+    };
+
+    const req = https.request(options, (res) => {
+      let responseBody = '';
+
+      res.on('data', (chunk) => {
+        responseBody += chunk;
+      });
+
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(responseBody);
+          resolve(json);
+        } catch (e) {
+          reject(new Error('Invalid JSON response'));
+        }
+      });
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
+    req.on('error', (e) => {
+      reject(new Error(`Request error: ${e.message}`));
+    });
 
-    const text = await response.text(); // Read the response as text first
-    try {
-      const data = JSON.parse(text); // Try to parse it as JSON
-      return data;
-    } catch (error) {
-      throw new Error(`Invalid JSON response: ${text}`);
-    }
-  } catch (error) {
-    console.error('Fetch error:', error);
-    throw error;
-  }
+    req.write(data);
+    req.end();
+  });
 }});
+
+// Broadcast player list and ready status to all clients in the room
+function broadcastRoomPlayers(roomCode) {
+  if (!rooms.has(roomCode) || !roomPlayers.has(roomCode)) return;
+  const clients = rooms.get(roomCode);
+  const playersArr = roomPlayers.get(roomCode);
+  const players = playersArr.map(p => ({ name: p.name, ready: !!p.ready }));
+  
+  clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({
+        type: 'room-players',
+        players
+      }));
+    }
+  });
+}
+
+// Check if enough players are ready to allow drawing
+function checkDrawingAllowed(roomCode) {
+  if (!rooms.has(roomCode) || !roomPlayers.has(roomCode)) return;
+  const clients = rooms.get(roomCode);
+  const playersArr = roomPlayers.get(roomCode);
+  const total = playersArr.length;
+  const readyCount = playersArr.filter(p => p.ready).length;
+  const needed = Math.ceil(total / 2);
+  const allow = readyCount >= needed && total > 0;
+
+  clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({
+        type: allow ? 'drawing-enabled' : 'drawing-disabled'
+      }));
+    }
+  });
+}
