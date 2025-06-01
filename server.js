@@ -110,27 +110,37 @@ wss.on('connection', (ws) => {
           ws.userId = userId;
           ws.hasJoinedRoom = true;
 
-          // --- NEW: Fetch all players from DB and sync roomPlayers ---
+          // --- NEW: Rebuild roomPlayers from all connected clients and DB ---
           try {
             const playersFromDb = await fetchData('get-room-players', { room_code: roomCode });
-            // playersFromDb.data should be an array of {name}
             let arr = [];
+            // Collect all connected clients in this room
+            const connectedClients = Array.from(roomClients).map(client => ({
+              name: client.username,
+              userId: client.userId,
+              ready: (() => {
+                // Find previous ready state if present
+                const prev = roomPlayers.get(roomCode).find(x => x.userId === client.userId);
+                return prev ? prev.ready : false;
+              })()
+            }));
+            // Add all DB players, but prefer connected clients for userId/ready
             if (playersFromDb && playersFromDb.data && Array.isArray(playersFromDb.data)) {
-              arr = playersFromDb.data.map(p => {
-                // Try to preserve ready state if already present in memory
-                const existing = roomPlayers.get(roomCode).find(x => x.name === p.name);
-                return {
-                  name: p.name,
-                  userId: existing ? existing.userId : null,
-                  ready: existing ? existing.ready : false
-                };
-              });
+              for (const p of playersFromDb.data) {
+                const connected = connectedClients.find(c => c.name === p.name);
+                if (connected) {
+                  arr.push(connected);
+                } else {
+                  arr.push({ name: p.name, userId: null, ready: false });
+                }
+              }
             }
-            // Ensure the joining player is in the list with correct userId
-            let found = arr.find(p => p.name === username);
-            if (found) found.userId = userId;
-            else arr.push({ name: username, userId, ready: false });
-
+            // Add any connected clients not in DB (shouldn't happen, but just in case)
+            for (const c of connectedClients) {
+              if (!arr.find(p => p.userId === c.userId)) {
+                arr.push(c);
+              }
+            }
             roomPlayers.set(roomCode, arr);
           } catch (e) {
             // fallback: just add if not present
