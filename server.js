@@ -387,12 +387,7 @@ function checkDrawingAllowed(roomCode) {
   const needed = Math.ceil(total / 2);
   const allow = readyCount >= needed && total > 0;
 
-  if (allow) {
-    // Reset all ready states for next round
-    playersArr.forEach(p => p.ready = false);
-    broadcastRoomPlayers(roomCode);
-  }
-
+  // Only broadcast drawing-enabled when enough players are ready, but do NOT reset ready states here
   clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify({
@@ -400,4 +395,6 @@ function checkDrawingAllowed(roomCode) {
       }));
     }
   });
+
+  // If drawing is enabled, do not reset ready states here!
 }
