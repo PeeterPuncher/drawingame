@@ -110,20 +110,15 @@
         </div>
       </div>
 
-    <!-- Ready Up Modal -->
-    <div class="modal fade" id="readyModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="readyModalLabel" aria-hidden="true">
+    <!-- Host Waiting Modal -->
+    <div class="modal fade" id="hostWaitModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="hostWaitModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h1 class="modal-title fs-5" id="readyModalLabel">Ready Up</h1>
+            <h1 class="modal-title fs-5" id="hostWaitModalLabel">Game Not Started</h1>
           </div>
-          <div class="modal-body">
-            <div>
-              <strong>Players:</strong>
-              <ul id="player-list" class="list-group mb-2"></ul>
-            </div>
-            <div id="ready-status-msg" class="mb-2"></div>
-            <button type="button" class="btn btn-success w-100" id="ready-up-btn">Ready Up</button>
+          <div class="modal-body text-center" id="host-wait-body">
+            <!-- Content set by JS -->
           </div>
         </div>
       </div>
@@ -147,15 +142,14 @@
     const urlParams = new URLSearchParams(window.location.search);
     const roomId = urlParams.get('roomId');
     let username = '';
-    let isReady = false;
+    let isHost = false;
+    let gameStarted = false;
     let canDraw = false;
     let playerList = [];
-    let readyCount = 0;
+    let hostId = null;
 
-    const readyModal = new bootstrap.Modal(document.getElementById('readyModal'));
-    const playerListElem = document.getElementById('player-list');
-    const readyUpBtn = document.getElementById('ready-up-btn');
-    const readyStatusMsg = document.getElementById('ready-status-msg');
+    const hostWaitModal = new bootstrap.Modal(document.getElementById('hostWaitModal'));
+    const hostWaitBody = document.getElementById('host-wait-body');
 
     roomInfo.innerText = `You are in Room: ${roomId}`;
 
@@ -218,33 +212,21 @@
         // Handle player list and ready status updates
         else if (data.type === 'room-players') {
             playerList = data.players;
-            readyCount = playerList.filter(p => p.ready).length;
+            hostId = data.hostId;
+            isHost = (hostId === userId);
             updatePlayerList();
-            updateReadyStatusMsg();
-            // If drawing is not enabled, show ready modal if not ready
-            if (!canDraw && !isReady) {
-                readyModal.show();
-            }
-            // If drawing is enabled, hide modal
-            if (canDraw) {
-                readyModal.hide();
-            }
-            // Update ready button state if already ready
-            const me = playerList.find(p => p.name === username);
-            if (me && me.ready) {
-                isReady = true;
-                readyUpBtn.disabled = true;
-                readyUpBtn.textContent = 'Waiting...';
-            } else {
-                isReady = false;
-                readyUpBtn.disabled = false;
-                readyUpBtn.textContent = 'Ready Up';
+            if (!gameStarted) showHostWaitModal();
+        }
+        else if (data.type === 'room-joined') {
+            if (data.data && data.data.hostId) {
+                hostId = data.data.hostId;
+                isHost = (hostId === userId);
             }
         }
-        // Allow drawing when enough players are ready
         else if (data.type === 'drawing-enabled') {
+            gameStarted = true;
+            hostWaitModal.hide();
             canDraw = true;
-            readyModal.hide();
         }
         // Block drawing if not enough ready
         else if (data.type === 'drawing-disabled') {
@@ -253,37 +235,44 @@
         }
     };
 
+    function showHostWaitModal() {
+        if (isHost) {
+            hostWaitBody.innerHTML = `
+                <div class="mb-2">You are the host. Start the game when ready.</div>
+                <button class="btn btn-success w-100" id="startGameBtn">Start Game</button>
+            `;
+            setTimeout(() => {
+                const btn = document.getElementById('startGameBtn');
+                if (btn) {
+                    btn.onclick = () => {
+                        socket.send(JSON.stringify({
+                            type: 'start-game',
+                            room_code: roomId,
+                            userId: userId
+                        }));
+                    };
+                }
+            }, 0);
+        } else {
+            hostWaitBody.innerHTML = `<div class="mb-2">Waiting for host to start the game...</div>`;
+        }
+        hostWaitModal.show();
+    }
+
     function updatePlayerList() {
         playerListElem.innerHTML = '';
         playerList.forEach(p => {
-            const isMe = p.name === username;
+            const isMe = p.userId === userId;
             const nameHtml = isMe ? `<strong>${p.name}</strong>` : p.name;
-            const readyIcon = p.ready ? '✔️' : '✗';
-            const readyColor = p.ready ? 'green' : 'red';
+            const hostMark = (hostId && p.userId === hostId) ? ' <span style="color:gold;">(host)</span>' : '';
             const li = document.createElement('li');
             li.className = 'list-group-item d-flex justify-content-between align-items-center';
-            li.innerHTML = `<span>${nameHtml}</span>
-                <span style="font-size:1.5em; color:${readyColor}">${readyIcon}</span>`;
+            li.innerHTML = `<span>${nameHtml}${hostMark}</span>`;
             playerListElem.appendChild(li);
         });
     }
 
-    function updateReadyStatusMsg() {
-        const total = playerList.length;
-        const needed = Math.ceil(total / 2);
-        readyStatusMsg.textContent = `Ready: ${readyCount}/${total} (Need ${needed} to start drawing)`;
-    }
-
-    readyUpBtn.addEventListener('click', () => {
-        if (!isReady) {
-            socket.send(JSON.stringify({
-                type: 'player-ready',
-                room_code: roomId,
-                username: username
-            }));
-            // UI will update on next room-players message
-        }
-    });
+    // Remove ready-up logic and modal usage
 
     // Block drawing if not allowed
     function drawingAllowed() {

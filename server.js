@@ -18,6 +18,7 @@ server.listen(port, () => {
 const rooms = new Map(); // Map<roomCode, Set<ws>>
 const roomPlayers = new Map(); // Map<roomCode, Array<{name, userId, ready}>>
 const roomTimeouts = new Map(); // Map<roomCode, timeout>
+const roomHosts = new Map(); // Map<roomCode, userId>
 
 app.use(express.static('public'));
 
@@ -110,47 +111,19 @@ wss.on('connection', (ws) => {
           ws.userId = userId;
           ws.hasJoinedRoom = true;
 
-          // --- NEW: Rebuild roomPlayers from all connected clients and DB ---
-          try {
-            const playersFromDb = await fetchData('get-room-players', { room_code: roomCode });
-            let arr = [];
-            // Collect all connected clients in this room
-            const connectedClients = Array.from(roomClients).map(client => ({
-              name: client.username,
-              userId: client.userId,
-              ready: (() => {
-                // Find previous ready state if present
-                const prev = roomPlayers.get(roomCode).find(x => x.userId === client.userId);
-                return prev ? prev.ready : false;
-              })()
-            }));
-            // Add all DB players, but prefer connected clients for userId/ready
-            if (playersFromDb && playersFromDb.data && Array.isArray(playersFromDb.data)) {
-              for (const p of playersFromDb.data) {
-                const connected = connectedClients.find(c => c.name === p.name);
-                if (connected) {
-                  arr.push(connected);
-                } else {
-                  arr.push({ name: p.name, userId: null, ready: false });
-                }
-              }
-            }
-            // Add any connected clients not in DB (shouldn't happen, but just in case)
-            for (const c of connectedClients) {
-              if (!arr.find(p => p.userId === c.userId)) {
-                arr.push(c);
-              }
-            }
-            roomPlayers.set(roomCode, arr);
-          } catch (e) {
-            // fallback: just add if not present
-            const arr = roomPlayers.get(roomCode);
-            if (!arr.find(p => p.userId === userId)) {
-              arr.push({ name: username, userId: userId, ready: false });
-            }
+          // --- HOST LOGIC ---
+          if (!roomHosts.has(roomCode) || roomHosts.get(roomCode) == null) {
+            roomHosts.set(roomCode, userId);
           }
 
-          // Broadcast player list and ready status
+          // --- PLAYER LIST LOGIC (simplified, just for display) ---
+          let arr = Array.from(roomClients).map(client => ({
+            name: client.username,
+            userId: client.userId
+          }));
+          roomPlayers.set(roomCode, arr);
+
+          // Broadcast player list and host info
           broadcastRoomPlayers(roomCode);
 
           // Broadcast to room (nincs szükség, hogy a saját reconnect üzenetét is elküldjük, de itt lehetőség van értesítésre)
@@ -167,7 +140,7 @@ wss.on('connection', (ws) => {
           // Send confirmation to the reconnecting client
           ws.send(JSON.stringify({
             type: 'room-joined',
-            data: { room_code: roomCode, username: username }
+            data: { room_code: roomCode, username: username, hostId: roomHosts.get(roomCode) }
           }));
         })
         .catch((error) => {
@@ -266,17 +239,17 @@ wss.on('connection', (ws) => {
       }
     }
     ////////////////////////////////////////////////////////////////////////////////////////////
-    else if (data.type === 'player-ready') {
+    else if (data.type === 'start-game') {
       const roomCode = data.room_code;
-      const username = data.username;
-      if (roomPlayers.has(roomCode)) {
-        const arr = roomPlayers.get(roomCode);
-        const player = arr.find(p => p.name === username);
-        if (player) {
-          player.ready = true;
-        }
-        broadcastRoomPlayers(roomCode);
-        checkDrawingAllowed(roomCode);
+      const userId = data.userId;
+      if (roomHosts.get(roomCode) === userId) {
+        // Only host can start
+        const clients = rooms.get(roomCode);
+        clients.forEach(client => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ type: 'drawing-enabled' }));
+          }
+        });
       }
     }
   });
@@ -413,13 +386,14 @@ function broadcastRoomPlayers(roomCode) {
   if (!rooms.has(roomCode) || !roomPlayers.has(roomCode)) return;
   const clients = rooms.get(roomCode);
   const playersArr = roomPlayers.get(roomCode);
-  const players = playersArr.map(p => ({ name: p.name, ready: !!p.ready }));
-  
+  const hostId = roomHosts.get(roomCode) || null;
+  const players = playersArr.map(p => ({ name: p.name, userId: p.userId }));
   clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify({
         type: 'room-players',
-        players
+        players,
+        hostId
       }));
     }
   });
