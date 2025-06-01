@@ -117,9 +117,8 @@ wss.on('connection', (ws) => {
           // Add to player list with ready=false
           playersArr.push({ name: username, userId: userId, ready: false });
 
-          // Broadcast player list and ready status to all clients
+          // Broadcast player list and ready status
           broadcastRoomPlayers(roomCode);
-          checkDrawingAllowed(roomCode);
 
           // Broadcast to room (nincs szükség, hogy a saját reconnect üzenetét is elküldjük, de itt lehetőség van értesítésre)
           roomClients.forEach(client => {
@@ -368,6 +367,7 @@ function broadcastRoomPlayers(roomCode) {
   const clients = rooms.get(roomCode);
   const playersArr = roomPlayers.get(roomCode);
   const players = playersArr.map(p => ({ name: p.name, ready: !!p.ready }));
+  
   clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify({
@@ -378,6 +378,7 @@ function broadcastRoomPlayers(roomCode) {
   });
 }
 
+// Check if enough players are ready to allow drawing
 function checkDrawingAllowed(roomCode) {
   if (!rooms.has(roomCode) || !roomPlayers.has(roomCode)) return;
   const clients = rooms.get(roomCode);
@@ -386,12 +387,6 @@ function checkDrawingAllowed(roomCode) {
   const readyCount = playersArr.filter(p => p.ready).length;
   const needed = Math.ceil(total / 2);
   const allow = readyCount >= needed && total > 0;
-
-  if (allow) {
-    // Reset all ready states for next round
-    playersArr.forEach(p => p.ready = false);
-    broadcastRoomPlayers(roomCode);
-  }
 
   clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {

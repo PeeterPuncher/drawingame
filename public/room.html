@@ -221,28 +221,8 @@
             readyCount = playerList.filter(p => p.ready).length;
             updatePlayerList();
             updateReadyStatusMsg();
-
-            // If the player is not in the list, reset isReady
-            const me = playerList.find(p => p.name === username);
-            if (!me) {
-                isReady = false;
-                readyUpBtn.disabled = false;
-                readyUpBtn.textContent = 'Ready Up';
-            } else {
-                // If the player is not ready, allow them to ready up again
-                if (!me.ready) {
-                    isReady = false;
-                    readyUpBtn.disabled = false;
-                    readyUpBtn.textContent = 'Ready Up';
-                } else {
-                    isReady = true;
-                    readyUpBtn.disabled = true;
-                    readyUpBtn.textContent = 'Waiting...';
-                }
-            }
-
             // Show ready modal if not ready and not allowed to draw
-            if (!canDraw) {
+            if (!isReady && !canDraw) {
                 readyModal.show();
             }
         }
@@ -250,15 +230,10 @@
         else if (data.type === 'drawing-enabled') {
             canDraw = true;
             readyModal.hide();
-            // Reset ready state for next round
-            isReady = false;
-            readyUpBtn.disabled = false;
-            readyUpBtn.textContent = 'Ready Up';
         }
         // Block drawing if not enough ready
         else if (data.type === 'drawing-disabled') {
             canDraw = false;
-            // Show modal if not ready
             if (!isReady) readyModal.show();
         }
     };
