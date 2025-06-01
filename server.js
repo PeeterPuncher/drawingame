@@ -76,16 +76,16 @@ wss.on('connection', (ws) => {
       const roomCode = data.room_code;
       const username = data.username;
       const userId = data.userId;
-    
+
       // Cancel scheduled deletion if the room is being rejoined
       if (roomTimeouts.has(roomCode)) {
         clearTimeout(roomTimeouts.get(roomCode));
         roomTimeouts.delete(roomCode);
       }
-    
+
       // First persist to database
       fetchData('join-room', { room_code: roomCode, user_name: username })
-        .then((responseData) => {
+        .then(async (responseData) => {
           // Initialize room if it doesn't exist
           if (!rooms.has(roomCode)) {
             rooms.set(roomCode, new Set());
@@ -94,7 +94,6 @@ wss.on('connection', (ws) => {
             roomPlayers.set(roomCode, []);
           }
           const roomClients = rooms.get(roomCode);
-          const playersArr = roomPlayers.get(roomCode);
 
           // Remove previous client with same userId
           for (let client of roomClients) {
@@ -103,9 +102,6 @@ wss.on('connection', (ws) => {
               break;
             }
           }
-          // Remove previous player entry with same userId
-          const idx = playersArr.findIndex(p => p.userId === userId);
-          if (idx !== -1) playersArr.splice(idx, 1);
 
           // Add the new connection to the room
           roomClients.add(ws);
@@ -114,8 +110,35 @@ wss.on('connection', (ws) => {
           ws.userId = userId;
           ws.hasJoinedRoom = true;
 
-          // Add to player list with ready=false
-          playersArr.push({ name: username, userId: userId, ready: false });
+          // --- NEW: Fetch all players from DB and sync roomPlayers ---
+          try {
+            const playersFromDb = await fetchData('get-room-players', { room_code: roomCode });
+            // playersFromDb.data should be an array of {name}
+            let arr = [];
+            if (playersFromDb && playersFromDb.data && Array.isArray(playersFromDb.data)) {
+              arr = playersFromDb.data.map(p => {
+                // Try to preserve ready state if already present in memory
+                const existing = roomPlayers.get(roomCode).find(x => x.name === p.name);
+                return {
+                  name: p.name,
+                  userId: existing ? existing.userId : null,
+                  ready: existing ? existing.ready : false
+                };
+              });
+            }
+            // Ensure the joining player is in the list with correct userId
+            let found = arr.find(p => p.name === username);
+            if (found) found.userId = userId;
+            else arr.push({ name: username, userId, ready: false });
+
+            roomPlayers.set(roomCode, arr);
+          } catch (e) {
+            // fallback: just add if not present
+            const arr = roomPlayers.get(roomCode);
+            if (!arr.find(p => p.userId === userId)) {
+              arr.push({ name: username, userId: userId, ready: false });
+            }
+          }
 
           // Broadcast player list and ready status
           broadcastRoomPlayers(roomCode);
@@ -130,7 +153,7 @@ wss.on('connection', (ws) => {
             }
           });
           getRooms();
-    
+
           // Send confirmation to the reconnecting client
           ws.send(JSON.stringify({
             type: 'room-joined',

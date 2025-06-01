@@ -153,6 +153,22 @@ else if ($action == "save-drawing")
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        else if ($action == 'get-room-players')
+        {
+            $room_code = $data["room_code"];
+            $players = [];
+            if ($room_code != "") {
+                $sql = "SELECT name FROM players WHERE roomId = '$room_code'";
+                $result = mysqli_query($conn, $sql);
+                while ($row = mysqli_fetch_assoc($result)) {
+                    $players[] = ['name' => $row['name']];
+                }
+            }
+            echo json_encode(['status' => 'success', 'data' => $players]);
+        }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         else
         {
                 echo json_encode(['status' => 'error', 'data' => 'Invalid action']);   
