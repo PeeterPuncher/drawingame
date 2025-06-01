@@ -118,7 +118,8 @@
             <h1 class="modal-title fs-5" id="hostWaitModalLabel">Game Not Started</h1>
           </div>
           <div class="modal-body text-center" id="host-wait-body">
-            <!-- Content set by JS -->
+            <div id="host-wait-message"></div>
+            <ul id="player-list" class="list-group mb-2"></ul>
           </div>
         </div>
       </div>
@@ -150,6 +151,8 @@
 
     const hostWaitModal = new bootstrap.Modal(document.getElementById('hostWaitModal'));
     const hostWaitBody = document.getElementById('host-wait-body');
+    const playerListElem = document.getElementById('player-list');
+    const hostWaitMessage = document.getElementById('host-wait-message');
 
     roomInfo.innerText = `You are in Room: ${roomId}`;
 
@@ -222,6 +225,8 @@
                 hostId = data.data.hostId;
                 isHost = (hostId === userId);
             }
+            // Show modal immediately after joining
+            if (!gameStarted) showHostWaitModal();
         }
         else if (data.type === 'drawing-enabled') {
             gameStarted = true;
@@ -236,8 +241,11 @@
     };
 
     function showHostWaitModal() {
+        // Set player list
+        updatePlayerList();
+        // Set message and button
         if (isHost) {
-            hostWaitBody.innerHTML = `
+            hostWaitMessage.innerHTML = `
                 <div class="mb-2">You are the host. Start the game when ready.</div>
                 <button class="btn btn-success w-100" id="startGameBtn">Start Game</button>
             `;
@@ -254,7 +262,7 @@
                 }
             }, 0);
         } else {
-            hostWaitBody.innerHTML = `<div class="mb-2">Waiting for host to start the game...</div>`;
+            hostWaitMessage.innerHTML = `<div class="mb-2">Waiting for host to start the game...</div>`;
         }
         hostWaitModal.show();
     }
