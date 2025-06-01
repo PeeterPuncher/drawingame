@@ -129,10 +129,10 @@
 
     let userId = localStorage.getItem("userId");
     if (!userId) {
-    // Generálj egy új egyedi azonosítót és tárold
-    userId = crypto.randomUUID();
-    localStorage.setItem("userId", userId);
+        userId = crypto.randomUUID();
+        localStorage.setItem("userId", userId);
     }
+    userId = String(userId); // always string
 
     const messagesDiv = document.getElementById('messages');
     const messageInput = document.getElementById('message-input');
@@ -215,17 +215,16 @@
         // Handle player list and ready status updates
         else if (data.type === 'room-players') {
             playerList = data.players;
-            hostId = data.hostId;
+            hostId = String(data.hostId);
             isHost = (hostId === userId);
             updatePlayerList();
             if (!gameStarted) showHostWaitModal();
         }
         else if (data.type === 'room-joined') {
             if (data.data && data.data.hostId) {
-                hostId = data.data.hostId;
+                hostId = String(data.data.hostId);
                 isHost = (hostId === userId);
             }
-            // Show modal immediately after joining
             if (!gameStarted) showHostWaitModal();
         }
         else if (data.type === 'drawing-enabled') {
@@ -241,9 +240,7 @@
     };
 
     function showHostWaitModal() {
-        // Set player list
         updatePlayerList();
-        // Set message and button
         if (isHost) {
             hostWaitMessage.innerHTML = `
                 <div class="mb-2">You are the host. Start the game when ready.</div>
@@ -270,9 +267,9 @@
     function updatePlayerList() {
         playerListElem.innerHTML = '';
         playerList.forEach(p => {
-            const isMe = p.userId === userId;
+            const isMe = String(p.userId) === userId;
             const nameHtml = isMe ? `<strong>${p.name}</strong>` : p.name;
-            const hostMark = (hostId && p.userId === hostId) ? ' <span style="color:gold;">(host)</span>' : '';
+            const hostMark = (hostId && String(p.userId) === hostId) ? ' <span style="color:gold;">(host)</span>' : '';
             const li = document.createElement('li');
             li.className = 'list-group-item d-flex justify-content-between align-items-center';
             li.innerHTML = `<span>${nameHtml}${hostMark}</span>`;

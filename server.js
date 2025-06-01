@@ -76,7 +76,7 @@ wss.on('connection', (ws) => {
     else if (data.type === 'join-room') {
       const roomCode = data.room_code;
       const username = data.username;
-      const userId = data.userId;
+      const userId = String(data.userId);
 
       // Cancel scheduled deletion if the room is being rejoined
       if (roomTimeouts.has(roomCode)) {
@@ -113,13 +113,13 @@ wss.on('connection', (ws) => {
 
           // --- HOST LOGIC ---
           if (!roomHosts.has(roomCode) || roomHosts.get(roomCode) == null) {
-            roomHosts.set(roomCode, userId);
+            roomHosts.set(roomCode, userId); // always string
           }
 
           // --- PLAYER LIST LOGIC (simplified, just for display) ---
           let arr = Array.from(roomClients).map(client => ({
             name: client.username,
-            userId: client.userId
+            userId: String(client.userId)
           }));
           roomPlayers.set(roomCode, arr);
 
@@ -140,7 +140,7 @@ wss.on('connection', (ws) => {
           // Send confirmation to the reconnecting client
           ws.send(JSON.stringify({
             type: 'room-joined',
-            data: { room_code: roomCode, username: username, hostId: roomHosts.get(roomCode) }
+            data: { room_code: roomCode, username: username, hostId: String(roomHosts.get(roomCode)) }
           }));
         })
         .catch((error) => {
@@ -241,8 +241,8 @@ wss.on('connection', (ws) => {
     ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'start-game') {
       const roomCode = data.room_code;
-      const userId = data.userId;
-      if (roomHosts.get(roomCode) === userId) {
+      const userId = String(data.userId);
+      if (String(roomHosts.get(roomCode)) === userId) {
         // Only host can start
         const clients = rooms.get(roomCode);
         clients.forEach(client => {
@@ -386,8 +386,8 @@ function broadcastRoomPlayers(roomCode) {
   if (!rooms.has(roomCode) || !roomPlayers.has(roomCode)) return;
   const clients = rooms.get(roomCode);
   const playersArr = roomPlayers.get(roomCode);
-  const hostId = roomHosts.get(roomCode) || null;
-  const players = playersArr.map(p => ({ name: p.name, userId: p.userId }));
+  const hostId = String(roomHosts.get(roomCode) || "");
+  const players = playersArr.map(p => ({ name: p.name, userId: String(p.userId) }));
   clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify({
