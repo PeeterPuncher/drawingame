@@ -118,34 +118,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-else if ($action == "save-drawing")
-{
-        // A fájl nevét itt beállíthatjuk, vagy dinamikusan generálhatjuk
-        $uploadDir = 'drawings/';
-        $fileName = 'canvas_image_' . time() . '.png';
-
-        if (isset($data['image']))
-        {
-                // A kép base64 kódolt adatainak dekódolása
-                $imageData = $data['image'];
-
-                // Levágjuk az adat URI prefixet (data:image/png;base64,)
-                $imageData = str_replace('data:image/png;base64,', '', $imageData);
-                $imageData = base64_decode($imageData);
-
-                // A fájl mentése
-                file_put_contents($uploadDir . $fileName, $imageData);
-
-                echo json_encode(["status"=> "success","data"=> $fileName]);
-        }
-        else
-        {
-                echo json_encode(["status"=> "error","data"=> "Image upload failed"]);
-        }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
         else if ($action == 'message')
         {
             

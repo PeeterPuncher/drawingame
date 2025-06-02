@@ -179,7 +179,7 @@ wss.on('connection', (ws) => {
       const userId = String(data.userId);
 
       // Save drawing to PHP backend
-      fetchData('save-drawing', { image: imageData })
+      fetchData('save-drawing', { image: imageData, room_code: roomCode })
         .then((responseData) => {
           console.log('Drawing saved:', responseData);
 
