@@ -237,6 +237,9 @@
             canDraw = true;
             startDrawingTimer(); // Always restart timer on game start
         }
+        else if (data.type === 'all-images-uploaded') {
+            window.location.href = data.redirectUrl;
+        }
     };
 
     function showHostWaitModal() {
@@ -521,7 +524,9 @@ canvas.addEventListener('mousemove', (e) => {
         const imageData = canvas.toDataURL('image/png');
         socket.send(JSON.stringify({
             type: 'save-drawing',
-            imageFile: imageData
+            imageFile: imageData,
+            room_code: roomId,
+            userId: userId
         }));
         canDraw = false; // Disable drawing after manual save
     });
@@ -549,11 +554,12 @@ canvas.addEventListener('mousemove', (e) => {
     }
 
     function autoSaveCanvas() {
-        // Same as saveButton click
         const imageData = canvas.toDataURL('image/png');
         socket.send(JSON.stringify({
             type: 'save-drawing',
-            imageFile: imageData
+            imageFile: imageData,
+            room_code: roomId,
+            userId: userId
         }));
         canDraw = false;
     }

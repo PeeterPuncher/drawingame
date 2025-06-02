@@ -152,6 +152,46 @@ else if ($action == "save-drawing")
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        else if ($action == "save-drawing")
+        {
+            $room_code = isset($data['room_code']) ? $data['room_code'] : 'unknown';
+            $uploadDir = 'drawings/' . $room_code . '/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+            $fileName = 'canvas_image_' . time() . '.png';
+
+            if (isset($data['image']))
+            {
+                $imageData = $data['image'];
+                $imageData = str_replace('data:image/png;base64,', '', $imageData);
+                $imageData = base64_decode($imageData);
+                file_put_contents($uploadDir . $fileName, $imageData);
+
+                echo json_encode(["status"=> "success","data"=> $fileName]);
+            }
+            else
+            {
+                echo json_encode(["status"=> "error","data"=> "Image upload failed"]);
+            }
+        }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        else if ($action == "list-drawings") {
+        $room_code = $data['room_code'];
+        $uploadDir = 'drawings/' . $room_code . '/';
+        $images = [];
+        if (is_dir($uploadDir)) {
+                foreach (scandir($uploadDir) as $file) {
+                if ($file !== '.' && $file !== '..' && preg_match('/\.png$/', $file)) {
+                        $images[] = $uploadDir . $file;
+                }
+                }
+        }
+        echo json_encode(["status" => "success", "data" => $images]);
+        }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         else if ($action == 'get-room-players')
         {

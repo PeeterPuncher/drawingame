@@ -19,6 +19,7 @@ const rooms = new Map(); // Map<roomCode, Set<ws>>
 const roomPlayers = new Map(); // Map<roomCode, Array<{name, userId, ready}>>
 const roomTimeouts = new Map(); // Map<roomCode, timeout>
 const roomHosts = new Map(); // Map<roomCode, userId>
+const roomUploads = new Map(); // Map<roomCode, Set<userId>>
 
 app.use(express.static('public'));
 
@@ -174,12 +175,39 @@ wss.on('connection', (ws) => {
 ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'save-drawing') {
       const imageData = data.imageFile;
-    
+      const roomCode = data.room_code;
+      const userId = String(data.userId);
+
+      // Save drawing to PHP backend
       fetchData('save-drawing', { image: imageData })
         .then((responseData) => {
           console.log('Drawing saved:', responseData);
-          
-          // Broadcast the saved drawing to other clients in the room
+
+          // Track uploads per room
+          if (!roomUploads.has(roomCode)) roomUploads.set(roomCode, new Set());
+          roomUploads.get(roomCode).add(userId);
+
+          // Check if all players have uploaded
+          const playersArr = roomPlayers.get(roomCode) || [];
+          const allUserIds = playersArr.map(p => String(p.userId));
+          const uploadedUserIds = Array.from(roomUploads.get(roomCode));
+          const allUploaded = allUserIds.every(uid => uploadedUserIds.includes(uid));
+
+          if (allUploaded && allUserIds.length > 0) {
+              // Notify all clients in the room to redirect
+              const clients = rooms.get(roomCode);
+              clients.forEach(client => {
+                  if (client.readyState === WebSocket.OPEN) {
+                      client.send(JSON.stringify({
+                          type: 'all-images-uploaded',
+                          redirectUrl: `https://gamedb.alwaysdata.net/room/${roomCode}`
+                      }));
+                  }
+              });
+              // Optionally clear uploads for next round
+              roomUploads.set(roomCode, new Set());
+          }
+
           ws.send(JSON.stringify({ type: 'save-drawing', data: imageData }));
         })
         .catch((error) => {
