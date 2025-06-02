@@ -231,7 +231,6 @@ wss.on('connection', (ws) => {
           } else {
             getRooms();
             broadcastRoomPlayers(roomCode);
-            checkDrawingAllowed(roomCode);
           }
         }, 3000); // 3-second grace period
     
@@ -313,7 +312,6 @@ ws.on('close', () => {
       } else {
         getRooms();
         broadcastRoomPlayers(roomCode);
-        checkDrawingAllowed(roomCode);
       }
     }, 3000); // 3 másodperces késleltetés
 
@@ -394,25 +392,6 @@ function broadcastRoomPlayers(roomCode) {
         type: 'room-players',
         players,
         hostId
-      }));
-    }
-  });
-}
-
-// Check if enough players are ready to allow drawing
-function checkDrawingAllowed(roomCode) {
-  if (!rooms.has(roomCode) || !roomPlayers.has(roomCode)) return;
-  const clients = rooms.get(roomCode);
-  const playersArr = roomPlayers.get(roomCode);
-  const total = playersArr.length;
-  const readyCount = playersArr.filter(p => p.ready).length;
-  const needed = Math.ceil(total / 2);
-  const allow = readyCount >= needed && total > 0;
-
-  clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({
-        type: allow ? 'drawing-enabled' : 'drawing-disabled'
       }));
     }
   });

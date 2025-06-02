@@ -209,10 +209,12 @@
         }
         else if (data.type === 'user-left')
         {
+            // Only show message, do NOT set canDraw = false or show any modal
             const message = document.createElement('div');
             message.innerHTML = `<p style="color: #911e16"><strong>${data.data.user}</strong> left the room</p>`;
             messagesDiv.appendChild(message);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            // Do not touch canDraw or timer here!
         }
         // Handle player list and ready status updates
         else if (data.type === 'room-players') {
@@ -233,12 +235,12 @@
             gameStarted = true;
             hostWaitModal.hide();
             canDraw = true;
-            startDrawingTimer();
+            startDrawingTimer(); // Always restart timer on game start
         }
         // Block drawing if not enough ready
         else if (data.type === 'drawing-disabled') {
-            canDraw = false;
-            if (!isReady) readyModal.show();
+            // Do NOT set canDraw = false here, since we don't use ready logic anymore
+            // (leave this block empty or remove it)
         }
     };
 
@@ -358,7 +360,7 @@
     let currentSize = 5;
     let fillMode = false;
     let timerInterval = null;
-    let timerSeconds = 30; // 3 minutes
+    let timerSeconds = 30; // 30 seconds for testing
     
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -529,7 +531,7 @@ canvas.addEventListener('mousemove', (e) => {
     });
 
     function startDrawingTimer() {
-        timerSeconds = 30;
+        timerSeconds = 30; // Always reset to 30 seconds
         updateTimerDisplay();
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
