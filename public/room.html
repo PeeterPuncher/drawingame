@@ -537,7 +537,7 @@ canvas.addEventListener('mousemove', (e) => {
             type: 'save-drawing',
             imageFile: imageData,
             room_code: roomId,
-            userId: userId
+            userId: userId // <-- ensure userId is sent
         }));
         canDraw = false;
         hasSaved = true;

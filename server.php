@@ -128,9 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
         else if ($action == "save-drawing")
         {
             $room_code = isset($data['room_code']) ? $data['room_code'] : 'unknown';
+            $user_id = isset($data['userId']) ? $data['userId'] : 'unknown'; // <-- get userId
             $uploadDir = 'drawings/' . $room_code . '/';
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-            $fileName = 'canvas_image_' . time() . '.png';
+            $fileName = 'canvas_image_' . $user_id . '_' . time() . '.png'; // <-- use userId in filename
 
             if (isset($data['image']))
             {
