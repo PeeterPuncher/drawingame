@@ -359,8 +359,7 @@
     let fillMode = false;
     let timerInterval = null;
     let timerSeconds = 30; // 30 seconds for testing
-    let hasSaved = false;
-
+    
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
@@ -522,16 +521,6 @@ canvas.addEventListener('mousemove', (e) => {
     });
     
     document.getElementById('saveButton').addEventListener('click', () => {
-        if (hasSaved) return; // Prevent duplicate save
-        saveCanvas();
-    });
-
-    function autoSaveCanvas() {
-        if (hasSaved) return; // Prevent duplicate save
-        saveCanvas();
-    }
-
-    function saveCanvas() {
         const imageData = canvas.toDataURL('image/png');
         socket.send(JSON.stringify({
             type: 'save-drawing',
@@ -539,9 +528,8 @@ canvas.addEventListener('mousemove', (e) => {
             room_code: roomId,
             userId: userId
         }));
-        canDraw = false;
-        hasSaved = true;
-    }
+        canDraw = false; // Disable drawing after manual save
+    });
 
     function startDrawingTimer() {
         timerSeconds = 30; // Always reset to 30 seconds
@@ -563,6 +551,17 @@ canvas.addEventListener('mousemove', (e) => {
         const min = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
         const sec = (timerSeconds % 60).toString().padStart(2, '0');
         timerDiv.textContent = `${min}:${sec}`;
+    }
+
+    function autoSaveCanvas() {
+        const imageData = canvas.toDataURL('image/png');
+        socket.send(JSON.stringify({
+            type: 'save-drawing',
+            imageFile: imageData,
+            room_code: roomId,
+            userId: userId
+        }));
+        canDraw = false;
     }
 </script>
 </body>
