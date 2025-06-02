@@ -207,14 +207,13 @@
             messagesDiv.appendChild(message);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
-        else if (data.type === 'user-left')
-        {
+        else if (data.type === 'user-left') {
             // Only show message, do NOT set canDraw = false or show any modal
             const message = document.createElement('div');
             message.innerHTML = `<p style="color: #911e16"><strong>${data.data.user}</strong> left the room</p>`;
             messagesDiv.appendChild(message);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            // Do not touch canDraw or timer here!
+            // Do not touch canDraw, gameStarted, or timer here!
         }
         // Handle player list and ready status updates
         else if (data.type === 'room-players') {
@@ -223,6 +222,7 @@
             isHost = (hostId === userId);
             updatePlayerList();
             if (!gameStarted) showHostWaitModal();
+            // Do not touch canDraw or gameStarted here!
         }
         else if (data.type === 'room-joined') {
             if (data.data && data.data.hostId) {
@@ -237,11 +237,10 @@
             canDraw = true;
             startDrawingTimer(); // Always restart timer on game start
         }
-        // Block drawing if not enough ready
-        else if (data.type === 'drawing-disabled') {
-            // Do NOT set canDraw = false here, since we don't use ready logic anymore
-            // (leave this block empty or remove it)
-        }
+        // Remove or leave empty: drawing-disabled handler
+        // else if (data.type === 'drawing-disabled') {
+        //     // Do nothing!
+        // }
     };
 
     function showHostWaitModal() {

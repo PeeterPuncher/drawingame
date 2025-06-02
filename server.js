@@ -231,6 +231,7 @@ wss.on('connection', (ws) => {
           } else {
             getRooms();
             broadcastRoomPlayers(roomCode);
+            // DO NOT call checkDrawingAllowed(roomCode) or send drawing-disabled!
           }
         }, 3000); // 3-second grace period
     
