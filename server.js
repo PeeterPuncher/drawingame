@@ -95,6 +95,12 @@ wss.on('connection', (ws) => {
           if (!roomPlayers.has(roomCode)) {
             roomPlayers.set(roomCode, []);
           }
+          arr = roomPlayers.get(roomCode);
+          // Only add if not already present
+          if (!arr.some(p => p.userId === userId)) {
+              arr.push({ name: username, userId: String(userId) });
+          }
+          roomPlayers.set(roomCode, arr);
           const roomClients = rooms.get(roomCode);
 
           // Remove previous client with same userId
