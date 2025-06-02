@@ -60,7 +60,7 @@
     <div class="row text-center">
         <div class="col-3 mt-5 text-end">
             <!-- TIMER DISPLAY -->
-            <div id="timer" style="font-size:2em; font-weight:bold; margin-bottom:10px;">03:00</div>
+            <div id="timer" style="font-size:2em; font-weight:bold; margin-bottom:10px;">0:30</div>
             <div class="colorButton" data-color="#000000" style="background-color: #000000; height: 40px; width: 40px; display: inline-block;"></div>
             <div class="colorButton" data-color="#8a8a8a" style="background-color: #8a8a8a; height: 40px; width: 40px; display: inline-block;"></div>
             <div class="colorButton" data-color="#FF0000" style="background-color: #FF0000; height: 40px; width: 40px; display: inline-block;"></div>
@@ -358,7 +358,7 @@
     let currentSize = 5;
     let fillMode = false;
     let timerInterval = null;
-    let timerSeconds = 180; // 3 minutes
+    let timerSeconds = 30; // 3 minutes
     
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -529,7 +529,7 @@ canvas.addEventListener('mousemove', (e) => {
     });
 
     function startDrawingTimer() {
-        timerSeconds = 180;
+        timerSeconds = 30;
         updateTimerDisplay();
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
@@ -557,7 +557,7 @@ canvas.addEventListener('mousemove', (e) => {
             type: 'save-drawing',
             imageFile: imageData
         }));
-        // Optionally, you can show a message or disable drawing here
+        canDraw = false;
     }
 </script>
 </body>
