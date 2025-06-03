@@ -24,9 +24,6 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
-            background-image: url(imgs/roomhatter.png);
-            background-repeat: no-repeat;
-            background-size: cover;
             overflow: hidden;
         }
         .hover-div {
@@ -55,9 +52,36 @@
         .hover-div:hover .hover-text {
             opacity: 1;
         }
+
+        .background-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #0077cc;
+            z-index: -2;
+        }
+
+        .frame-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('imgs/roomhatter.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            pointer-events: none;
+            z-index: -1;
+        }
     </style>
 </head>
 <body>
+    <div class="background-layer"></div>
+    <div class="frame-overlay"></div>
+
     <div class="alert alert-danger" role="alert" id="disconnected-alert" style="display: none;">
         Client disconnected from the server. <a href="#" class="alert-link">Click here to refresh</a>
       </div>
@@ -130,7 +154,6 @@
         </div>
       </div>
     </div>
-
 <script>
 
     let userId = localStorage.getItem("userId");
