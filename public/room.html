@@ -13,10 +13,12 @@
             min-height: 100vh;
             margin: 0;
             font-family: 'Quicksand', Arial, sans-serif;
+            /* Remove static SVG background-image */
             background: linear-gradient(135deg, #f8ffae 0%, #43c6ac 100%);
             overflow-x: hidden;
         }
-        .bg-dotwave {
+        /* Animated SVG background overlay */
+        .animated-bg {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             pointer-events: none;
@@ -356,61 +358,35 @@
     </style>
 </head>
 <body>
-    <!-- Custom animated dot/wave SVG background -->
-    <svg class="bg-dotwave" width="100vw" height="100vh" viewBox="0 0 1920 1080" preserveAspectRatio="none">
+    <!-- Animated SVG background -->
+    <svg class="animated-bg" width="100vw" height="100vh" viewBox="0 0 1920 1080" preserveAspectRatio="none" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;">
         <g>
-            <!-- Dots floating to the right -->
-            <circle r="7" fill="#b2fefa">
-                <animate attributeName="cx" values="100;2100" dur="22s" repeatCount="indefinite"/>
-                <animate attributeName="cy" values="200;220;200" dur="7s" repeatCount="indefinite"/>
+            <!-- Dots -->
+            <circle cx="200" cy="200" r="8" fill="#b2fefa">
+                <animate attributeName="cy" values="200;220;200" dur="6s" repeatCount="indefinite"/>
             </circle>
-            <circle r="5" fill="#f6d365">
-                <animate attributeName="cx" values="400;2200" dur="28s" repeatCount="indefinite"/>
-                <animate attributeName="cy" values="800;780;800" dur="8s" repeatCount="indefinite"/>
+            <circle cx="400" cy="800" r="6" fill="#f6d365">
+                <animate attributeName="cx" values="400;420;400" dur="7s" repeatCount="indefinite"/>
             </circle>
-            <circle r="6" fill="#43c6ac">
-                <animate attributeName="cx" values="1700;-200" dur="30s" repeatCount="indefinite"/>
-                <animate attributeName="cy" values="300;320;300" dur="9s" repeatCount="indefinite"/>
+            <circle cx="1700" cy="300" r="7" fill="#43c6ac">
+                <animate attributeName="cy" values="300;320;300" dur="8s" repeatCount="indefinite"/>
             </circle>
-            <circle r="4" fill="#fcf941">
-                <animate attributeName="cx" values="1200;-200" dur="25s" repeatCount="indefinite"/>
-                <animate attributeName="cy" values="900;920;900" dur="7s" repeatCount="indefinite"/>
+            <circle cx="1200" cy="900" r="5" fill="#f6d365">
+                <animate attributeName="cx" values="1200;1220;1200" dur="5.5s" repeatCount="indefinite"/>
             </circle>
-            <circle r="8" fill="#ff3ae5">
-                <animate attributeName="cx" values="800;2200" dur="32s" repeatCount="indefinite"/>
-                <animate attributeName="cy" values="400;420;400" dur="10s" repeatCount="indefinite"/>
-            </circle>
-            <!-- Wavy lines (short) acting as "radio waves" -->
-            <g>
-                <path id="wave1" d="M0 0 Q10 10 20 0 Q30 -10 40 0" stroke="#43c6ac" stroke-width="3" fill="none"/>
-                <animateMotion dur="18s" repeatCount="indefinite" path="M 200 300 L 2100 300"/>
-                <animateTransform attributeName="transform" type="scale" values="1,1;1,1.3;1,1" dur="2.5s" repeatCount="indefinite"/>
-            </g>
-            <g>
-                <path id="wave2" d="M0 0 Q8 8 16 0 Q24 -8 32 0" stroke="#ff6f61" stroke-width="2.5" fill="none"/>
-                <animateMotion dur="24s" repeatCount="indefinite" path="M 600 700 L -200 700"/>
-                <animateTransform attributeName="transform" type="scale" values="1,1;1,1.25;1,1" dur="2.2s" repeatCount="indefinite"/>
-            </g>
-            <g>
-                <path id="wave3" d="M0 0 Q12 12 24 0 Q36 -12 48 0" stroke="#b2fefa" stroke-width="3" fill="none"/>
-                <animateMotion dur="20s" repeatCount="indefinite" path="M 1000 500 L 2200 500"/>
-                <animateTransform attributeName="transform" type="scale" values="1,1;1,1.18;1,1" dur="2.8s" repeatCount="indefinite"/>
-            </g>
-            <g>
-                <path id="wave4" d="M0 0 Q10 10 20 0 Q30 -10 40 0" stroke="#fcf941" stroke-width="2.5" fill="none"/>
-                <animateMotion dur="22s" repeatCount="indefinite" path="M 300 950 L 2100 950"/>
-                <animateTransform attributeName="transform" type="scale" values="1,1;1,1.2;1,1" dur="2.1s" repeatCount="indefinite"/>
-            </g>
-            <!-- More dots and waves for density -->
-            <circle r="4" fill="#ba0dff">
-                <animate attributeName="cx" values="1000;-200" dur="27s" repeatCount="indefinite"/>
-                <animate attributeName="cy" values="100;120;100" dur="6s" repeatCount="indefinite"/>
-            </circle>
-            <g>
-                <path id="wave5" d="M0 0 Q8 8 16 0 Q24 -8 32 0" stroke="#8a8a8a" stroke-width="2" fill="none"/>
-                <animateMotion dur="19s" repeatCount="indefinite" path="M 200 600 L 2100 600"/>
-                <animateTransform attributeName="transform" type="scale" values="1,1;1,1.15;1,1" dur="2.3s" repeatCount="indefinite"/>
-            </g>
+            <!-- Squiggly lines -->
+            <path id="squiggle1" d="M100 100 Q130 130 160 100 T220 100" stroke="#43c6ac" stroke-width="4" fill="none">
+                <animateTransform attributeName="transform" type="translate" from="0 0" to="0 20" dur="5s" repeatCount="indefinite" direction="alternate"/>
+            </path>
+            <path id="squiggle2" d="M600 300 Q630 330 660 300 T720 300" stroke="#ff6f61" stroke-width="3" fill="none">
+                <animateTransform attributeName="transform" type="translate" from="0 0" to="0 -18" dur="6s" repeatCount="indefinite" direction="alternate"/>
+            </path>
+            <path id="squiggle3" d="M1500 700 Q1530 730 1560 700 T1620 700" stroke="#b2fefa" stroke-width="4" fill="none">
+                <animateTransform attributeName="transform" type="translate" from="0 0" to="0 15" dur="7s" repeatCount="indefinite" direction="alternate"/>
+            </path>
+            <path id="squiggle4" d="M300 950 Q330 970 360 950 T420 950" stroke="#fcf941" stroke-width="3" fill="none">
+                <animateTransform attributeName="transform" type="translate" from="0 0" to="0 -12" dur="4.5s" repeatCount="indefinite" direction="alternate"/>
+            </path>
         </g>
     </svg>
     <div class="main-container">
