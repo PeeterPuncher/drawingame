@@ -236,6 +236,16 @@
             hostWaitModal.hide();
             canDraw = true;
             startDrawingTimer(); // Always restart timer on game start
+
+            // Request a random word for this user
+            socket.send(JSON.stringify({
+                type: 'get-random-word',
+                userId: userId
+            }));
+        }
+        else if (data.type === 'random-word') {
+            // Set the random word for this user
+            document.getElementById('titkosSzo').innerHTML = data.word;
         }
         else if (data.type === 'all-images-uploaded') {
             window.location.href = data.redirectUrl;

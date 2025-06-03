@@ -182,6 +182,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        else if ($action == 'get-words')
+        {
+            $words = [];
+            $sql = "SELECT nev FROM szavak";
+            $result = mysqli_query($conn, $sql);
+            while ($row = mysqli_fetch_assoc($result)) {
+                $words[] = $row['nev'];
+            }
+            echo json_encode(['status' => 'success', 'data' => $words]);
+        }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         else
         {
                 echo json_encode(['status' => 'error', 'data' => 'Invalid action']);   

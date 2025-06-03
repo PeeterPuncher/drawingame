@@ -280,6 +280,36 @@ wss.on('connection', (ws) => {
         });
       }
     }
+    // --- Replace the previous get-random-word block with this ---
+    if (data.type === 'get-random-word') {
+      try {
+        // Request all words from the PHP backend
+        const resp = await fetchData('get-words');
+        let words = [];
+        if (resp && resp.status === 'success' && Array.isArray(resp.data)) {
+          words = resp.data;
+        }
+        if (words.length === 0) {
+          ws.send(JSON.stringify({
+            type: 'random-word',
+            word: 'nincs szó'
+          }));
+          return;
+        }
+        const randomIndex = Math.floor(Math.random() * words.length);
+        const word = words[randomIndex];
+        ws.send(JSON.stringify({
+          type: 'random-word',
+          word: word
+        }));
+      } catch (err) {
+        ws.send(JSON.stringify({
+          type: 'random-word',
+          word: 'hiba'
+        }));
+      }
+      return;
+    }
   });
 
 ////////////////////////////////////////////////////////////////////////////////////////////
