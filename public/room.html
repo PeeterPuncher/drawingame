@@ -525,6 +525,37 @@
             gameStarted = true;
             hostWaitModal.hide();
             canDraw = true;
+            // --- RESET STATE FOR NEW ROUND ---
+            // Clear canvas using the same logic as the clear button
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Set color to black and highlight the black button
+            currentColor = "#000000";
+            colorButtons.forEach(btn => {
+                if (btn.getAttribute('data-color').toLowerCase() === '#000000') {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Set brush size to small (first sizeButton)
+            if (sizeButtons.length > 0) {
+                currentSize = parseInt(sizeButtons[0].getAttribute('data-size'));
+                sizeButtons.forEach((btn, idx) => {
+                    if (idx === 0) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            }
+
+            fillMode = false;
+            isDrawing = false;
+            lastX = 0;
+            lastY = 0;
+            hasSaved = false;
+            // --- END RESET ---
+
             startDrawingTimer(); // Always restart timer on game start
 
             // Set the word for everyone
@@ -533,8 +564,10 @@
             }
         }
         else if (data.type === 'all-images-uploaded') {
-            // Open gallery in a new tab, keep this page open for next round
-            window.open(data.redirectUrl, '_blank');
+            // Wait 250ms before opening the gallery to ensure all scripts finish
+            setTimeout(() => {
+                window.open(data.redirectUrl, '_blank');
+            }, 250);
             // Show host waiting modal for all users
             gameStarted = false;
             canDraw = false;
