@@ -13,17 +13,9 @@
             min-height: 100vh;
             margin: 0;
             font-family: 'Quicksand', Arial, sans-serif;
-            /* Remove static SVG background-image */
             background: linear-gradient(135deg, #f8ffae 0%, #43c6ac 100%);
-            overflow-x: hidden;
-        }
-        /* Animated SVG background overlay */
-        .animated-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
+            /* Subtle SVG pattern overlay */
+            background-image: url('data:image/svg+xml;utf8,<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="2" fill="%23b2fefa"/><circle cx="10" cy="50" r="1.5" fill="%23f6d365"/><circle cx="50" cy="10" r="1.5" fill="%23f6d365"/></svg>');
         }
         .main-container {
             max-width: 1400px; /* increased from 1200px */
@@ -211,20 +203,15 @@
             font-size: 1em;
             margin-bottom: 8px;
             box-shadow: 0 2px 8px rgba(60,60,60,0.08);
-            display: flex;
-            flex-direction: column;
         }
         #messages div {
             margin-bottom: 6px;
             padding: 6px 10px;
             border-radius: 12px;
             background: #fff;
+            display: inline-block;
             max-width: 90%;
             word-break: break-word;
-            /* Ensure each message is on its own line */
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
         }
         #messages div strong {
             color: #43c6ac;
@@ -358,37 +345,6 @@
     </style>
 </head>
 <body>
-    <!-- Animated SVG background -->
-    <svg class="animated-bg" width="100vw" height="100vh" viewBox="0 0 1920 1080" preserveAspectRatio="none" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;">
-        <g>
-            <!-- Dots -->
-            <circle cx="200" cy="200" r="8" fill="#b2fefa">
-                <animate attributeName="cy" values="200;220;200" dur="6s" repeatCount="indefinite"/>
-            </circle>
-            <circle cx="400" cy="800" r="6" fill="#f6d365">
-                <animate attributeName="cx" values="400;420;400" dur="7s" repeatCount="indefinite"/>
-            </circle>
-            <circle cx="1700" cy="300" r="7" fill="#43c6ac">
-                <animate attributeName="cy" values="300;320;300" dur="8s" repeatCount="indefinite"/>
-            </circle>
-            <circle cx="1200" cy="900" r="5" fill="#f6d365">
-                <animate attributeName="cx" values="1200;1220;1200" dur="5.5s" repeatCount="indefinite"/>
-            </circle>
-            <!-- Squiggly lines -->
-            <path id="squiggle1" d="M100 100 Q130 130 160 100 T220 100" stroke="#43c6ac" stroke-width="4" fill="none">
-                <animateTransform attributeName="transform" type="translate" from="0 0" to="0 20" dur="5s" repeatCount="indefinite" direction="alternate"/>
-            </path>
-            <path id="squiggle2" d="M600 300 Q630 330 660 300 T720 300" stroke="#ff6f61" stroke-width="3" fill="none">
-                <animateTransform attributeName="transform" type="translate" from="0 0" to="0 -18" dur="6s" repeatCount="indefinite" direction="alternate"/>
-            </path>
-            <path id="squiggle3" d="M1500 700 Q1530 730 1560 700 T1620 700" stroke="#b2fefa" stroke-width="4" fill="none">
-                <animateTransform attributeName="transform" type="translate" from="0 0" to="0 15" dur="7s" repeatCount="indefinite" direction="alternate"/>
-            </path>
-            <path id="squiggle4" d="M300 950 Q330 970 360 950 T420 950" stroke="#fcf941" stroke-width="3" fill="none">
-                <animateTransform attributeName="transform" type="translate" from="0 0" to="0 -12" dur="4.5s" repeatCount="indefinite" direction="alternate"/>
-            </path>
-        </g>
-    </svg>
     <div class="main-container">
         <div class="tools-panel">
             <div class="timer" id="timer">0:30</div>
