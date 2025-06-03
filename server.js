@@ -20,6 +20,7 @@ const roomPlayers = new Map(); // Map<roomCode, Array<{name, userId, ready}>>
 const roomTimeouts = new Map(); // Map<roomCode, timeout>
 const roomHosts = new Map(); // Map<roomCode, userId>
 const roomUploads = new Map(); // Map<roomCode, Set<userId>>
+const roomWords = new Map(); // Map<roomCode, word>
 
 app.use(express.static('public'));
 
@@ -272,41 +273,32 @@ wss.on('connection', (ws) => {
       const userId = String(data.userId);
       if (String(roomHosts.get(roomCode)) === userId) {
         // Only host can start
-        const clients = rooms.get(roomCode);
-        clients.forEach(client => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type: 'drawing-enabled' }));
+        // Fetch a random word from the database
+        fetchData('get-words').then(resp => {
+          let words = [];
+          if (resp && resp.status === 'success' && Array.isArray(resp.data)) {
+            words = resp.data;
           }
+          let word = 'nincs szó';
+          if (words.length > 0) {
+            const randomIndex = Math.floor(Math.random() * words.length);
+            word = words[randomIndex];
+          }
+          roomWords.set(roomCode, word);
+          const clients = rooms.get(roomCode);
+          clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: 'drawing-enabled', word }));
+            }
+          });
+        }).catch(() => {
+          const clients = rooms.get(roomCode);
+          clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: 'drawing-enabled', word: 'hiba' }));
+            }
+          });
         });
-      }
-    }
-    // --- Replace the previous get-random-word block with this ---
-    if (data.type === 'get-random-word') {
-      try {
-        // Request all words from the PHP backend
-        const resp = await fetchData('get-words');
-        let words = [];
-        if (resp && resp.status === 'success' && Array.isArray(resp.data)) {
-          words = resp.data;
-        }
-        if (words.length === 0) {
-          ws.send(JSON.stringify({
-            type: 'random-word',
-            word: 'nincs szó'
-          }));
-          return;
-        }
-        const randomIndex = Math.floor(Math.random() * words.length);
-        const word = words[randomIndex];
-        ws.send(JSON.stringify({
-          type: 'random-word',
-          word: word
-        }));
-      } catch (err) {
-        ws.send(JSON.stringify({
-          type: 'random-word',
-          word: 'hiba'
-        }));
       }
       return;
     }
