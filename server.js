@@ -16,7 +16,11 @@ server.listen(port, () => {
 });
 
 const rooms = new Map(); // Map<roomCode, Set<ws>>
+const roomPlayers = new Map(); // Map<roomCode, Array<{name, userId, ready}>>
 const roomTimeouts = new Map(); // Map<roomCode, timeout>
+const roomHosts = new Map(); // Map<roomCode, userId>
+const roomUploads = new Map(); // Map<roomCode, Set<userId>>
+const roomWords = new Map(); // Map<roomCode, word>
 
 app.use(express.static('public'));
 
@@ -74,39 +78,56 @@ wss.on('connection', (ws) => {
     else if (data.type === 'join-room') {
       const roomCode = data.room_code;
       const username = data.username;
-      const userId = data.userId;  // Új mező: kliens által tárolt egyedi azonosító
-    
+      const userId = String(data.userId);
+
       // Cancel scheduled deletion if the room is being rejoined
       if (roomTimeouts.has(roomCode)) {
         clearTimeout(roomTimeouts.get(roomCode));
         roomTimeouts.delete(roomCode);
       }
-    
+
       // First persist to database
       fetchData('join-room', { room_code: roomCode, user_name: username })
-        .then((responseData) => {
+        .then(async (responseData) => {
           // Initialize room if it doesn't exist
           if (!rooms.has(roomCode)) {
             rooms.set(roomCode, new Set());
           }
+          if (!roomPlayers.has(roomCode)) {
+            roomPlayers.set(roomCode, []);
+          }
           const roomClients = rooms.get(roomCode);
-    
-          // Ha már létezik egy kliens azonos userId-val, töröljük azt (reconnect eset)
+
+          // Remove previous client with same userId
           for (let client of roomClients) {
             if (client.userId === userId) {
               roomClients.delete(client);
-              console.log(`Reconnecting user ${username} (${userId}), removed previous connection`);
               break;
             }
           }
-    
+
           // Add the new connection to the room
           roomClients.add(ws);
           ws.roomCode = roomCode;
           ws.username = username;
-          ws.userId = userId;  // Tároljuk a userId-t is
+          ws.userId = userId;
           ws.hasJoinedRoom = true;
-    
+
+          // --- HOST LOGIC ---
+          if (!roomHosts.has(roomCode) || roomHosts.get(roomCode) == null) {
+            roomHosts.set(roomCode, userId); // always string
+          }
+
+          // --- PLAYER LIST LOGIC (simplified, just for display) ---
+          let arr = Array.from(roomClients).map(client => ({
+            name: client.username,
+            userId: String(client.userId)
+          }));
+          roomPlayers.set(roomCode, arr);
+
+          // Broadcast player list and host info
+          broadcastRoomPlayers(roomCode);
+
           // Broadcast to room (nincs szükség, hogy a saját reconnect üzenetét is elküldjük, de itt lehetőség van értesítésre)
           roomClients.forEach(client => {
             if (client.readyState === WebSocket.OPEN && client !== ws) {
@@ -117,11 +138,11 @@ wss.on('connection', (ws) => {
             }
           });
           getRooms();
-    
+
           // Send confirmation to the reconnecting client
           ws.send(JSON.stringify({
             type: 'room-joined',
-            data: { room_code: roomCode, username: username }
+            data: { room_code: roomCode, username: username, hostId: String(roomHosts.get(roomCode)) }
           }));
         })
         .catch((error) => {
@@ -155,12 +176,39 @@ wss.on('connection', (ws) => {
 ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'save-drawing') {
       const imageData = data.imageFile;
-    
-      fetchData('save-drawing', { image: imageData })
+      const roomCode = data.room_code;
+      const userId = String(data.userId);
+
+      // Save drawing to PHP backend
+      fetchData('save-drawing', { image: imageData, room_code: roomCode, userId: userId }) // <-- pass userId
         .then((responseData) => {
           console.log('Drawing saved:', responseData);
-          
-          // Broadcast the saved drawing to other clients in the room
+
+          // Track uploads per room
+          if (!roomUploads.has(roomCode)) roomUploads.set(roomCode, new Set());
+          roomUploads.get(roomCode).add(userId);
+
+          // Check if all players have uploaded
+          const playersArr = roomPlayers.get(roomCode) || [];
+          const allUserIds = playersArr.map(p => String(p.userId));
+          const uploadedUserIds = Array.from(roomUploads.get(roomCode));
+          const allUploaded = allUserIds.every(uid => uploadedUserIds.includes(uid));
+
+          if (allUploaded && allUserIds.length > 0) {
+              // Notify all clients in the room to redirect
+              const clients = rooms.get(roomCode);
+              clients.forEach(client => {
+                  if (client.readyState === WebSocket.OPEN) {
+                      client.send(JSON.stringify({
+                          type: 'all-images-uploaded',
+                          redirectUrl: `https://gamedb.alwaysdata.net/room/${roomCode}`
+                      }));
+                  }
+              });
+              // Optionally clear uploads for next round
+              roomUploads.set(roomCode, new Set());
+          }
+
           ws.send(JSON.stringify({ type: 'save-drawing', data: imageData }));
         })
         .catch((error) => {
@@ -172,11 +220,18 @@ wss.on('connection', (ws) => {
     else if (data.type === 'leave-room') {
       const roomCode = data.room_code;
       const username = data.username;
-    
+
       if (rooms.has(roomCode)) {
         const roomClients = rooms.get(roomCode);
-        roomClients.delete(ws); // Remove the client
-    
+        roomClients.delete(ws);
+
+        // Remove from player list
+        if (roomPlayers.has(roomCode)) {
+          const arr = roomPlayers.get(roomCode);
+          const idx = arr.findIndex(p => p.name === username);
+          if (idx !== -1) arr.splice(idx, 1);
+        }
+
         // Broadcast that the user left after a grace period
         const timeoutId = setTimeout(() => {
           roomClients.forEach(client => {
@@ -204,11 +259,48 @@ wss.on('connection', (ws) => {
             roomTimeouts.set(roomCode, deleteTimeoutId);
           } else {
             getRooms();
+            broadcastRoomPlayers(roomCode);
+            // DO NOT call checkDrawingAllowed(roomCode) or send drawing-disabled!
           }
         }, 3000); // 3-second grace period
     
         roomTimeouts.set(roomCode, timeoutId);
       }
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////
+    else if (data.type === 'start-game') {
+      const roomCode = data.room_code;
+      const userId = String(data.userId);
+      if (String(roomHosts.get(roomCode)) === userId) {
+        // Only host can start
+        // Fetch a random word from the database
+        fetchData('get-words').then(resp => {
+          let words = [];
+          if (resp && resp.status === 'success' && Array.isArray(resp.data)) {
+            words = resp.data;
+          }
+          let word = 'nincs szó';
+          if (words.length > 0) {
+            const randomIndex = Math.floor(Math.random() * words.length);
+            word = words[randomIndex];
+          }
+          roomWords.set(roomCode, word);
+          const clients = rooms.get(roomCode);
+          clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: 'drawing-enabled', word }));
+            }
+          });
+        }).catch(() => {
+          const clients = rooms.get(roomCode);
+          clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: 'drawing-enabled', word: 'hiba' }));
+            }
+          });
+        });
+      }
+      return;
     }
   });
 
@@ -229,21 +321,34 @@ ws.on('close', () => {
     const roomClients = rooms.get(roomCode);
     roomClients.delete(ws);
 
-    // Notify remaining users after a grace period
+    // Remove from player list
+    if (roomPlayers.has(roomCode)) {
+      const arr = roomPlayers.get(roomCode);
+      const idx = arr.findIndex(p => p.name === username);
+      if (idx !== -1) arr.splice(idx, 1);
+    }
+
+    // Indíts egy törlési időzítőt, de ne végezd el az adatbázis törlést azonnal!
     const timeoutId = setTimeout(() => {
+      // Itt lehet meghívni a "final deletion" vagy a "set offline" végleges műveletet.
+      // Pl.: helyettesítsd a törlést offline állapotra, vagy csak küldj értesítést:
       fetchData('leave-room', { user_name: username })
         .then((responseData) => {
           roomClients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({ type: 'user-disconnected', data: { user: username } }));
-              getRooms(); // Update the lobby for all clients
+              client.send(JSON.stringify({
+                type: 'user-disconnected',
+                data: { user: username }
+              }));
+              getRooms(); // frissítsd a lobby állapotot
             }
           });
         })
         .catch(console.error);
 
-      // Schedule room deletion only if empty
-      if (roomClients.size == 0) {
+      // Törölheted a szobából, ha már üres (vagy esetleg csak offline státusz kerül beállításra)
+      if (roomClients.size === 0) {
+        // Itt lehet a szoba törlését is késleltetni, vagy csak offline-ra állítani
         const deleteTimeoutId = setTimeout(() => {
           rooms.delete(roomCode);
           fetchData('delete-room', { room_code: roomCode })
@@ -252,19 +357,21 @@ ws.on('close', () => {
               getRooms();
             })
             .catch(console.error);
-        }, 3000); // 3-second grace period
+        }, 3000); // 3 másodperces extra késleltetés
 
         roomTimeouts.set(roomCode, deleteTimeoutId);
       } else {
         getRooms();
+        broadcastRoomPlayers(roomCode);
       }
-    }, 3000); // 3-second grace period
+    }, 3000); // 3 másodperces késleltetés
 
     roomTimeouts.set(roomCode, timeoutId);
   }
 
   console.log('Client disconnected');
 });
+
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/room', (req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
@@ -292,20 +399,9 @@ async function getRooms() {
 
 
 
-
-
 async function fetchData(action, body = {}) {
   const url = new URL('server.php', baseUrl).toString();
   const payload = JSON.stringify({ action, ...body });
-
-  if (action != "save-drawing")
-  {
-    console.log("Sending payload to PHP:", payload); // Log the payload
-  }
-  else
-  {
-    console.log("Sending drawing to PHP");
-  }
 
   try {
     const response = await fetch(url, {
@@ -321,9 +417,9 @@ async function fetchData(action, body = {}) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    const text = await response.text(); // Read the response as text first
+    const text = await response.text();
     try {
-      const data = JSON.parse(text); // Try to parse it as JSON
+      const data = JSON.parse(text);
       return data;
     } catch (error) {
       throw new Error(`Invalid JSON response: ${text}`);
@@ -333,3 +429,21 @@ async function fetchData(action, body = {}) {
     throw error;
   }
 }});
+
+// Broadcast player list and ready status to all clients in the room
+function broadcastRoomPlayers(roomCode) {
+  if (!rooms.has(roomCode) || !roomPlayers.has(roomCode)) return;
+  const clients = rooms.get(roomCode);
+  const playersArr = roomPlayers.get(roomCode);
+  const hostId = String(roomHosts.get(roomCode) || "");
+  const players = playersArr.map(p => ({ name: p.name, userId: String(p.userId) }));
+  clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({
+        type: 'room-players',
+        players,
+        hostId
+      }));
+    }
+  });
+}

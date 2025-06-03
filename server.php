@@ -118,37 +118,79 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-else if ($action == "save-drawing")
-{
-        // A fájl nevét itt beállíthatjuk, vagy dinamikusan generálhatjuk
-        $uploadDir = 'drawings/';
-        $fileName = 'canvas_image_' . time() . '.png';
-
-        if (isset($data['image']))
-        {
-                // A kép base64 kódolt adatainak dekódolása
-                $imageData = $data['image'];
-
-                // Levágjuk az adat URI prefixet (data:image/png;base64,)
-                $imageData = str_replace('data:image/png;base64,', '', $imageData);
-                $imageData = base64_decode($imageData);
-
-                // A fájl mentése
-                file_put_contents($uploadDir . $fileName, $imageData);
-
-                echo json_encode(["status"=> "success","data"=> $fileName]);
-        }
-        else
-        {
-                echo json_encode(["status"=> "error","data"=> "Image upload failed"]);
-        }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
         else if ($action == 'message')
         {
             
+        }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        else if ($action == "save-drawing")
+        {
+            $room_code = isset($data['room_code']) ? $data['room_code'] : 'unknown';
+            $user_id = isset($data['userId']) ? $data['userId'] : 'unknown'; // <-- get userId
+            $uploadDir = 'drawings/' . $room_code . '/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+            $fileName = 'canvas_image_' . $user_id . '_' . time() . '.png'; // <-- use userId in filename
+
+            if (isset($data['image']))
+            {
+                $imageData = $data['image'];
+                $imageData = str_replace('data:image/png;base64,', '', $imageData);
+                $imageData = base64_decode($imageData);
+                file_put_contents($uploadDir . $fileName, $imageData);
+
+                echo json_encode(["status"=> "success","data"=> $fileName]);
+            }
+            else
+            {
+                echo json_encode(["status"=> "error","data"=> "Image upload failed"]);
+            }
+        }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        else if ($action == "list-drawings") {
+        $room_code = $data['room_code'];
+        $uploadDir = 'drawings/' . $room_code . '/';
+        $images = [];
+        if (is_dir($uploadDir)) {
+                foreach (scandir($uploadDir) as $file) {
+                if ($file !== '.' && $file !== '..' && preg_match('/\.png$/', $file)) {
+                        $images[] = $uploadDir . $file;
+                }
+                }
+        }
+        echo json_encode(["status" => "success", "data" => $images]);
+        }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        else if ($action == 'get-room-players')
+        {
+            $room_code = $data["room_code"];
+            $players = [];
+            if ($room_code != "") {
+                $sql = "SELECT name FROM players WHERE roomId = '$room_code'";
+                $result = mysqli_query($conn, $sql);
+                while ($row = mysqli_fetch_assoc($result)) {
+                    $players[] = ['name' => $row['name']];
+                }
+            }
+            echo json_encode(['status' => 'success', 'data' => $players]);
+        }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        else if ($action == 'get-words')
+        {
+            $words = [];
+            $sql = "SELECT nev FROM szavak";
+            $result = mysqli_query($conn, $sql);
+            while ($row = mysqli_fetch_assoc($result)) {
+                $words[] = $row['nev'];
+            }
+            echo json_encode(['status' => 'success', 'data' => $words]);
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
