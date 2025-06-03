@@ -535,7 +535,10 @@
         else if (data.type === 'all-images-uploaded') {
             // Open gallery in a new tab, keep this page open for next round
             window.open(data.redirectUrl, '_blank');
-            // Do not redirect or disconnect here!
+            // Show host waiting modal for all users
+            gameStarted = false;
+            canDraw = false;
+            showHostWaitModal();
         }
     };
 
