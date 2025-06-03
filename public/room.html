@@ -14,8 +14,29 @@
             margin: 0;
             font-family: 'Quicksand', Arial, sans-serif;
             background: linear-gradient(135deg, #f8ffae 0%, #43c6ac 100%);
-            /* Subtle SVG pattern overlay */
+            position: relative;
+            overflow: hidden;
+        }
+        /* Animated SVG dot pattern overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 200vw; height: 200vh;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.25;
             background-image: url('data:image/svg+xml;utf8,<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="2" fill="%23b2fefa"/><circle cx="10" cy="50" r="1.5" fill="%23f6d365"/><circle cx="50" cy="10" r="1.5" fill="%23f6d365"/></svg>');
+            background-repeat: repeat;
+            background-size: 60px 60px;
+            animation: moveDotsBg 30s linear infinite;
+        }
+        @keyframes moveDotsBg {
+            0% {
+                transform: translate(0, 0);
+            }
+            100% {
+                transform: translate(-60px, -60px);
+            }
         }
         .main-container {
             max-width: 1400px; /* increased from 1200px */
