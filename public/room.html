@@ -533,7 +533,9 @@
             }
         }
         else if (data.type === 'all-images-uploaded') {
-            window.location.href = data.redirectUrl;
+            // Open gallery in a new tab, keep this page open for next round
+            window.open(data.redirectUrl, '_blank');
+            // Do not redirect or disconnect here!
         }
     };
 
