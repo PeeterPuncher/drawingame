@@ -577,10 +577,12 @@
 
     function showHostWaitModal() {
         updatePlayerList();
+        let leaveBtnHtml = `<button class="btn btn-danger w-100 mt-2" id="leaveRoomBtn">Leave Room</button>`;
         if (isHost) {
             hostWaitMessage.innerHTML = `
                 <div class="mb-2">You are the host. Start the game when ready.</div>
                 <button class="btn btn-success w-100" id="startGameBtn">Start Game</button>
+                ${leaveBtnHtml}
             `;
             setTimeout(() => {
                 const btn = document.getElementById('startGameBtn');
@@ -593,9 +595,22 @@
                         }));
                     };
                 }
+                const leaveBtn = document.getElementById('leaveRoomBtn');
+                if (leaveBtn) {
+                    leaveBtn.onclick = goBack;
+                }
             }, 0);
         } else {
-            hostWaitMessage.innerHTML = `<div class="mb-2">Waiting for host to start the game...</div>`;
+            hostWaitMessage.innerHTML = `
+                <div class="mb-2">Waiting for host to start the game...</div>
+                ${leaveBtnHtml}
+            `;
+            setTimeout(() => {
+                const leaveBtn = document.getElementById('leaveRoomBtn');
+                if (leaveBtn) {
+                    leaveBtn.onclick = goBack;
+                }
+            }, 0);
         }
         hostWaitModal.show();
     }
