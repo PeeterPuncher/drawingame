@@ -22,6 +22,7 @@ const roomHosts = new Map(); // Map<roomCode, userId>
 const roomUploads = new Map(); // Map<roomCode, Set<userId>>
 const roomWords = new Map(); // Map<roomCode, word>
 const roomRounds = new Map(); // Map<roomCode, roundNumber>
+const roomStarted = new Map(); // Map<roomCode, boolean>  // <-- NEW
 
 app.use(express.static('public'));
 
@@ -71,10 +72,11 @@ wss.on('connection', (ws) => {
     else if (data.type === 'create-room') {
       const roomCode = generateRoomCode();
       const username = data.username;
-    
+
       fetchData('create-room', { room_code: roomCode, room_name: data.roomName })
         .then((responseData) => {
           rooms.set(roomCode, new Set());
+          roomStarted.set(roomCode, false); // <-- Mark as not started
     
           console.log(`Created room ${roomCode}`); // Log the action
           ws.send(JSON.stringify({ type: 'room-created', data: { ...responseData, roomCode} }));
@@ -85,6 +87,15 @@ wss.on('connection', (ws) => {
       const roomCode = data.room_code;
       const username = data.username;
       const userId = String(data.userId);
+
+      // --- Prevent join if room has started ---
+      if (roomStarted.get(roomCode)) {
+        ws.send(JSON.stringify({
+          type: 'error',
+          message: 'Game has already started in this room. You cannot join now.'
+        }));
+        return;
+      }
 
       // Cancel scheduled deletion if the room is being rejoined
       if (roomTimeouts.has(roomCode)) {
@@ -285,6 +296,8 @@ wss.on('connection', (ws) => {
         round++;
         roomRounds.set(roomCode, round);
 
+        roomStarted.set(roomCode, true); // <-- Mark as started
+
         // Fetch a random word from the database
         fetchData('get-words').then(resp => {
           let words = [];
@@ -393,6 +406,12 @@ app.get('/canvas', (req, res) => res.sendFile(path.join(__dirname, 'public', 'ra
 async function getRooms() {
   fetchData('get-lobby')
   .then((responseData) => {
+    // Add started status to each room in the lobby data
+    if (responseData && Array.isArray(responseData.data)) {
+      responseData.data.forEach(room => {
+        room.started = !!roomStarted.get(room.code);
+      });
+    }
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify({ type: 'update-lobby', data: responseData }));

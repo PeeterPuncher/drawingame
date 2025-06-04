@@ -245,6 +245,11 @@ socket.onmessage = (event) =>
         roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
                               <span style="color: #911e16">Room Closing</span>`;
       }
+      // --- NEW: Prevent join if started ---
+      else if (room.started) {
+        roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span>
+                              <span style="color: #888; font-weight: bold;">Game Started</span>`;
+      }
       else
       {
         roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
