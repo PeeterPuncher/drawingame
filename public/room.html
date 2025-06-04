@@ -347,7 +347,7 @@
 <body>
     <div class="main-container">
         <div class="tools-panel">
-            <div class="timer" id="timer">0:30</div>
+            <div class="timer" id="timer">1:30</div>
             <div class="color-palette">
                 <div class="colorButton" data-color="#000000" style="background-color: #000000;"></div>
                 <div class="colorButton" data-color="#8a8a8a" style="background-color: #8a8a8a;"></div>
@@ -706,7 +706,7 @@
     let currentSize = 5;
     let fillMode = false;
     let timerInterval = null;
-    let timerSeconds = 30; // 30 seconds for testing
+    let timerSeconds = 90; // 1 minute 30 seconds
     let hasSaved = false;
 
     ctx.fillStyle = 'white';
@@ -894,7 +894,7 @@ canvas.addEventListener('mousemove', (e) => {
     }
 
     function startDrawingTimer() {
-        timerSeconds = 30; // Always reset to 30 seconds
+        timerSeconds = 90; // Always reset to 1:30 (90 seconds)
         updateTimerDisplay();
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
