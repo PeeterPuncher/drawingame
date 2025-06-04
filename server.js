@@ -22,7 +22,6 @@ const roomHosts = new Map(); // Map<roomCode, userId>
 const roomUploads = new Map(); // Map<roomCode, Set<userId>>
 const roomWords = new Map(); // Map<roomCode, word>
 const roomRounds = new Map(); // Map<roomCode, roundNumber>
-const roomRequiredDrawers = new Map(); // Map<roomCode, Set<userId>>
 
 app.use(express.static('public'));
 
@@ -187,10 +186,6 @@ wss.on('connection', (ws) => {
       const userId = String(data.userId);
       const round = roomRounds.get(roomCode) || 1;
 
-      // --- Mark this user as required to draw if they save ---
-      if (!roomRequiredDrawers.has(roomCode)) roomRequiredDrawers.set(roomCode, new Set());
-      roomRequiredDrawers.get(roomCode).add(userId);
-
       // Save drawing to PHP backend, pass round info
       fetchData('save-drawing', { image: imageData, room_code: roomCode, userId: userId, round: round })
         .then((responseData) => {
@@ -200,12 +195,13 @@ wss.on('connection', (ws) => {
           if (!roomUploads.has(roomCode)) roomUploads.set(roomCode, new Set());
           roomUploads.get(roomCode).add(userId);
 
-          // Only check for required drawers, not all players
-          const requiredDrawers = Array.from(roomRequiredDrawers.get(roomCode));
+          // Check if all players have uploaded
+          const playersArr = roomPlayers.get(roomCode) || [];
+          const allUserIds = playersArr.map(p => String(p.userId));
           const uploadedUserIds = Array.from(roomUploads.get(roomCode));
-          const allUploaded = requiredDrawers.every(uid => uploadedUserIds.includes(uid));
+          const allUploaded = allUserIds.every(uid => uploadedUserIds.includes(uid));
 
-          if (allUploaded && requiredDrawers.length > 0) {
+          if (allUploaded && allUserIds.length > 0) {
               // Notify all clients in the room to redirect, include round in URL
               const clients = rooms.get(roomCode);
               clients.forEach(client => {
@@ -217,7 +213,6 @@ wss.on('connection', (ws) => {
                   }
               });
               // Optionally clear uploads for next round
-              roomRequiredDrawers.set(roomCode, new Set());
               roomUploads.set(roomCode, new Set());
           }
 
