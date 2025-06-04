@@ -23,6 +23,8 @@ const roomUploads = new Map(); // Map<roomCode, Set<userId>>
 const roomWords = new Map(); // Map<roomCode, word>
 const roomRounds = new Map(); // Map<roomCode, roundNumber>
 const roomRequiredDrawers = new Map(); // Map<roomCode, Set<userId>>
+const roomActiveDrawers = new Map();   // Map<roomCode, Set<userId>>
+const roomRoundTimers = new Map();     // Map<roomCode, Timeout>
 
 app.use(express.static('public'));
 
@@ -181,15 +183,75 @@ wss.on('connection', (ws) => {
       }
     }
 ////////////////////////////////////////////////////////////////////////////////////////////
+    else if (data.type === 'drawing-enabled') {
+      const roomCode = ws.roomCode;
+      const userId = String(data.userId);
+      const word = data.word;
+
+      // --- Mark all current players as eligible to draw for this round
+      roomActiveDrawers.set(roomCode, new Set());
+      roomRequiredDrawers.set(roomCode, new Set());
+
+      // Start a timer for the round (30s)
+      if (roomRoundTimers.has(roomCode)) {
+        clearTimeout(roomRoundTimers.get(roomCode));
+      }
+      roomRoundTimers.set(roomCode, setTimeout(() => {
+        // At timer end, finalize eligible drawers
+        const active = roomActiveDrawers.get(roomCode) || new Set();
+        roomRequiredDrawers.set(roomCode, new Set(active));
+        // If someone already saved, keep them in requiredDrawers
+        if (roomUploads.has(roomCode)) {
+          for (const uid of roomUploads.get(roomCode)) {
+            active.add(uid);
+          }
+        }
+        // After timer, check if all required have uploaded
+        const required = Array.from(roomRequiredDrawers.get(roomCode));
+        const uploaded = roomUploads.has(roomCode) ? Array.from(roomUploads.get(roomCode)) : [];
+        const allUploaded = required.length > 0 && required.every(uid => uploaded.includes(uid));
+        if (allUploaded) {
+          const round = roomRounds.get(roomCode) || 1;
+          const clients = rooms.get(roomCode);
+          clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({
+                type: 'all-images-uploaded',
+                redirectUrl: `https://gamedb.alwaysdata.net/room/${roomCode}?round=${round}`
+              }));
+            }
+          });
+          roomRequiredDrawers.set(roomCode, new Set());
+          roomUploads.set(roomCode, new Set());
+        }
+      }, 30000));
+
+      // Send the word to all clients in the room
+      const clients = rooms.get(roomCode);
+      clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ type: 'drawing-enabled', word }));
+        }
+      });
+    }
     else if (data.type === 'save-drawing') {
       const imageData = data.imageFile;
       const roomCode = data.room_code;
       const userId = String(data.userId);
       const round = roomRounds.get(roomCode) || 1;
 
-      // --- Mark this user as required to draw if they save ---
-      if (!roomRequiredDrawers.has(roomCode)) roomRequiredDrawers.set(roomCode, new Set());
-      roomRequiredDrawers.get(roomCode).add(userId);
+      // --- Mark this user as active (touched canvas or saved) ---
+      if (!roomActiveDrawers.has(roomCode)) roomActiveDrawers.set(roomCode, new Set());
+      roomActiveDrawers.get(roomCode).add(userId);
+
+      // If timer already ended, also add to requiredDrawers
+      if (roomRoundTimers.has(roomCode) && roomRequiredDrawers.has(roomCode)) {
+        // If timer is not running, requiredDrawers is already finalized
+        // If timer is running, requiredDrawers will be finalized at timer end
+        // So only add to requiredDrawers if timer is not running
+        // But to be safe, always add to requiredDrawers if user saves
+        roomRequiredDrawers.get(roomCode).add(userId);
+      }
 
       // Save drawing to PHP backend, pass round info
       fetchData('save-drawing', { image: imageData, room_code: roomCode, userId: userId, round: round })
@@ -201,11 +263,20 @@ wss.on('connection', (ws) => {
           roomUploads.get(roomCode).add(userId);
 
           // Only check for required drawers, not all players
-          const requiredDrawers = Array.from(roomRequiredDrawers.get(roomCode));
+          const requiredDrawers = Array.from(roomRequiredDrawers.get(roomCode) || []);
           const uploadedUserIds = Array.from(roomUploads.get(roomCode));
-          const allUploaded = requiredDrawers.every(uid => uploadedUserIds.includes(uid));
-
-          if (allUploaded && requiredDrawers.length > 0) {
+          // Only check if requiredDrawers is finalized (i.e., timer ended or all have saved)
+          let allUploaded = false;
+          if (requiredDrawers.length > 0) {
+            allUploaded = requiredDrawers.every(uid => uploadedUserIds.includes(uid));
+          }
+          // If all required have uploaded, end round
+          if (allUploaded) {
+              // Clear timer if still running
+              if (roomRoundTimers.has(roomCode)) {
+                clearTimeout(roomRoundTimers.get(roomCode));
+                roomRoundTimers.delete(roomCode);
+              }
               // Notify all clients in the room to redirect, include round in URL
               const clients = rooms.get(roomCode);
               clients.forEach(client => {
@@ -218,6 +289,7 @@ wss.on('connection', (ws) => {
               });
               // Optionally clear uploads for next round
               roomRequiredDrawers.set(roomCode, new Set());
+              roomActiveDrawers.set(roomCode, new Set());
               roomUploads.set(roomCode, new Set());
           }
 
