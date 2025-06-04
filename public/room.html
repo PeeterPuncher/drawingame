@@ -519,10 +519,7 @@
                 hostId = String(data.data.hostId);
                 isHost = (hostId === userId);
             }
-            // Only show wait modal if showWaitModal is true (default true for old clients)
-            if (!gameStarted && (data.data.showWaitModal === undefined || data.data.showWaitModal)) {
-                showHostWaitModal();
-            }
+            if (!gameStarted) showHostWaitModal();
         }
         else if (data.type === 'drawing-enabled') {
             gameStarted = true;

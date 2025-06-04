@@ -140,32 +140,10 @@ wss.on('connection', (ws) => {
           });
           getRooms();
 
-          // --- NEW LOGIC: Only send wait modal if game not started or timer is 0 ---
-          // We'll track round state and timer per room in memory.
-          // Add a new map to track round state and timer per room:
-          // const roomRoundState = new Map(); // Map<roomCode, { started: bool, endTime: timestamp }>
-
-          // We'll add this map at the top:
-          // const roomRoundState = new Map();
-
-          // For now, add this at the top if not present:
-          if (typeof global.roomRoundState === "undefined") global.roomRoundState = new Map();
-          const roomRoundState = global.roomRoundState;
-
-          // When a round is started (in 'start-game'), set started=true and endTime=Date.now()+duration
-          // When timer is 0, set started=false
-
-          // Here, check if round is running and timer > 0
-          let showWaitModal = true;
-          const state = roomRoundState.get(roomCode);
-          if (state && state.started && state.endTime && Date.now() < state.endTime) {
-            // Game is running and timer not 0, so do NOT show wait modal for this user
-            showWaitModal = false;
-          }
           // Send confirmation to the reconnecting client
           ws.send(JSON.stringify({
             type: 'room-joined',
-            data: { room_code: roomCode, username: username, hostId: String(roomHosts.get(roomCode)), showWaitModal }
+            data: { room_code: roomCode, username: username, hostId: String(roomHosts.get(roomCode)) }
           }));
         })
         .catch((error) => {
@@ -219,12 +197,6 @@ wss.on('connection', (ws) => {
           const allUploaded = allUserIds.every(uid => uploadedUserIds.includes(uid));
 
           if (allUploaded && allUserIds.length > 0) {
-              // --- Mark round as ended for join logic ---
-              if (typeof global.roomRoundState === "undefined") global.roomRoundState = new Map();
-              const roomRoundState = global.roomRoundState;
-              if (roomRoundState.has(roomCode)) {
-                roomRoundState.set(roomCode, { started: false, endTime: Date.now() });
-              }
               // Notify all clients in the room to redirect, include round in URL
               const clients = rooms.get(roomCode);
               clients.forEach(client => {
@@ -307,12 +279,6 @@ wss.on('connection', (ws) => {
         let round = roomRounds.get(roomCode) || 0;
         round++;
         roomRounds.set(roomCode, round);
-
-        // --- Track round state and timer for join logic ---
-        if (typeof global.roomRoundState === "undefined") global.roomRoundState = new Map();
-        const roomRoundState = global.roomRoundState;
-        const roundDuration = 30 * 1000; // 30 seconds
-        roomRoundState.set(roomCode, { started: true, endTime: Date.now() + roundDuration });
 
         // Fetch a random word from the database
         fetchData('get-words').then(resp => {
