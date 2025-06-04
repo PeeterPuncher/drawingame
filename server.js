@@ -190,7 +190,7 @@ wss.on('connection', (ws) => {
 
       // --- Mark all current players as eligible to draw for this round
       roomActiveDrawers.set(roomCode, new Set());
-      roomRequiredDrawers.set(roomCode, new Set());
+      roomRequiredDrawers.set(roomCode, null); // Not finalized yet
 
       // Start a timer for the round (30s)
       if (roomRoundTimers.has(roomCode)) {
@@ -221,7 +221,7 @@ wss.on('connection', (ws) => {
               }));
             }
           });
-          roomRequiredDrawers.set(roomCode, new Set());
+          roomRequiredDrawers.set(roomCode, null);
           roomActiveDrawers.set(roomCode, new Set());
           roomUploads.set(roomCode, new Set());
         }
@@ -246,10 +246,6 @@ wss.on('connection', (ws) => {
       if (!roomActiveDrawers.has(roomCode)) roomActiveDrawers.set(roomCode, new Set());
       roomActiveDrawers.get(roomCode).add(userId);
 
-      // Always add to requiredDrawers if timer has ended (finalized), or if user saves after timer
-      if (!roomRequiredDrawers.has(roomCode)) roomRequiredDrawers.set(roomCode, new Set());
-      roomRequiredDrawers.get(roomCode).add(userId);
-
       // Save drawing to PHP backend, pass round info
       fetchData('save-drawing', { image: imageData, room_code: roomCode, userId: userId, round: round })
         .then((responseData) => {
@@ -259,35 +255,39 @@ wss.on('connection', (ws) => {
           if (!roomUploads.has(roomCode)) roomUploads.set(roomCode, new Set());
           roomUploads.get(roomCode).add(userId);
 
-          // Only check for required drawers, not all players
-          const requiredDrawers = Array.from(roomRequiredDrawers.get(roomCode) || []);
-          const uploadedUserIds = Array.from(roomUploads.get(roomCode));
-          let allUploaded = false;
-          if (requiredDrawers.length > 0) {
-            allUploaded = requiredDrawers.every(uid => uploadedUserIds.includes(uid));
+          // Only check for required drawers if finalized (i.e., after timer)
+          const requiredDrawersSet = roomRequiredDrawers.get(roomCode);
+          if (requiredDrawersSet && requiredDrawersSet instanceof Set) {
+            const requiredDrawers = Array.from(requiredDrawersSet);
+            const uploadedUserIds = Array.from(roomUploads.get(roomCode));
+            let allUploaded = false;
+            if (requiredDrawers.length > 0) {
+              allUploaded = requiredDrawers.every(uid => uploadedUserIds.includes(uid));
+            }
+            // If all required have uploaded, end round
+            if (allUploaded) {
+                // Clear timer if still running
+                if (roomRoundTimers.has(roomCode)) {
+                  clearTimeout(roomRoundTimers.get(roomCode));
+                  roomRoundTimers.delete(roomCode);
+                }
+                // Notify all clients in the room to redirect, include round in URL
+                const clients = rooms.get(roomCode);
+                clients.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                            type: 'all-images-uploaded',
+                            redirectUrl: `https://gamedb.alwaysdata.net/room/${roomCode}?round=${round}`
+                        }));
+                    }
+                });
+                // Optionally clear uploads for next round
+                roomRequiredDrawers.set(roomCode, null);
+                roomActiveDrawers.set(roomCode, new Set());
+                roomUploads.set(roomCode, new Set());
+            }
           }
-          // If all required have uploaded, end round
-          if (allUploaded) {
-              // Clear timer if still running
-              if (roomRoundTimers.has(roomCode)) {
-                clearTimeout(roomRoundTimers.get(roomCode));
-                roomRoundTimers.delete(roomCode);
-              }
-              // Notify all clients in the room to redirect, include round in URL
-              const clients = rooms.get(roomCode);
-              clients.forEach(client => {
-                  if (client.readyState === WebSocket.OPEN) {
-                      client.send(JSON.stringify({
-                          type: 'all-images-uploaded',
-                          redirectUrl: `https://gamedb.alwaysdata.net/room/${roomCode}?round=${round}`
-                      }));
-                  }
-              });
-              // Optionally clear uploads for next round
-              roomRequiredDrawers.set(roomCode, new Set());
-              roomActiveDrawers.set(roomCode, new Set());
-              roomUploads.set(roomCode, new Set());
-          }
+          // else: do not end round until timer finalizes required drawers
 
           ws.send(JSON.stringify({ type: 'save-drawing', data: imageData }));
         })
