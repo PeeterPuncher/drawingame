@@ -298,6 +298,8 @@ wss.on('connection', (ws) => {
 
         roomStarted.set(roomCode, true); // <-- Mark as started
 
+        getRooms(); // <-- Immediately update lobby for all clients
+
         // Fetch a random word from the database
         fetchData('get-words').then(resp => {
           let words = [];
