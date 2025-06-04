@@ -128,10 +128,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
         else if ($action == "save-drawing")
         {
             $room_code = isset($data['room_code']) ? $data['room_code'] : 'unknown';
-            $user_id = isset($data['userId']) ? $data['userId'] : 'unknown'; // <-- get userId
+            $user_id = isset($data['userId']) ? $data['userId'] : 'unknown';
+            $round = isset($data['round']) ? intval($data['round']) : 1;
             $uploadDir = 'drawings/' . $room_code . '/';
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-            $fileName = 'canvas_image_' . $user_id . '_' . time() . '.png'; // <-- use userId in filename
+            $fileName = 'canvas_image_' . $user_id . '_r' . $round . '_' . time() . '.png';
 
             if (isset($data['image']))
             {
@@ -151,17 +152,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
         
         else if ($action == "list-drawings") {
-        $room_code = $data['room_code'];
-        $uploadDir = 'drawings/' . $room_code . '/';
-        $images = [];
-        if (is_dir($uploadDir)) {
+            $room_code = $data['room_code'];
+            $uploadDir = 'drawings/' . $room_code . '/';
+            $images = [];
+            if (is_dir($uploadDir)) {
                 foreach (scandir($uploadDir) as $file) {
-                if ($file !== '.' && $file !== '..' && preg_match('/\.png$/', $file)) {
-                        $images[] = $uploadDir . $file;
+                    if ($file !== '.' && $file !== '..' && preg_match('/\.png$/', $file)) {
+                        // Extract round from filename: canvas_image_{userId}_r{round}_{timestamp}.png
+                        $round = 1;
+                        if (preg_match('/canvas_image_[^_]+_r(\d+)_\d+\.png$/', $file, $m)) {
+                            $round = intval($m[1]);
+                        }
+                        $images[] = ['path' => $uploadDir . $file, 'round' => $round];
+                    }
                 }
-                }
-        }
-        echo json_encode(["status" => "success", "data" => $images]);
+            }
+            echo json_encode(["status" => "success", "data" => $images]);
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

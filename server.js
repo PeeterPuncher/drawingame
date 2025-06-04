@@ -21,6 +21,7 @@ const roomTimeouts = new Map(); // Map<roomCode, timeout>
 const roomHosts = new Map(); // Map<roomCode, userId>
 const roomUploads = new Map(); // Map<roomCode, Set<userId>>
 const roomWords = new Map(); // Map<roomCode, word>
+const roomRounds = new Map(); // Map<roomCode, roundNumber>
 
 app.use(express.static('public'));
 
@@ -178,9 +179,10 @@ wss.on('connection', (ws) => {
       const imageData = data.imageFile;
       const roomCode = data.room_code;
       const userId = String(data.userId);
+      const round = roomRounds.get(roomCode) || 1;
 
-      // Save drawing to PHP backend
-      fetchData('save-drawing', { image: imageData, room_code: roomCode, userId: userId }) // <-- pass userId
+      // Save drawing to PHP backend, pass round info
+      fetchData('save-drawing', { image: imageData, room_code: roomCode, userId: userId, round: round })
         .then((responseData) => {
           console.log('Drawing saved:', responseData);
 
@@ -195,13 +197,13 @@ wss.on('connection', (ws) => {
           const allUploaded = allUserIds.every(uid => uploadedUserIds.includes(uid));
 
           if (allUploaded && allUserIds.length > 0) {
-              // Notify all clients in the room to redirect
+              // Notify all clients in the room to redirect, include round in URL
               const clients = rooms.get(roomCode);
               clients.forEach(client => {
                   if (client.readyState === WebSocket.OPEN) {
                       client.send(JSON.stringify({
                           type: 'all-images-uploaded',
-                          redirectUrl: `https://gamedb.alwaysdata.net/room/${roomCode}`
+                          redirectUrl: `https://gamedb.alwaysdata.net/room/${roomCode}?round=${round}`
                       }));
                   }
               });
@@ -273,6 +275,11 @@ wss.on('connection', (ws) => {
       const userId = String(data.userId);
       if (String(roomHosts.get(roomCode)) === userId) {
         // Only host can start
+        // Increment round number
+        let round = roomRounds.get(roomCode) || 0;
+        round++;
+        roomRounds.set(roomCode, round);
+
         // Fetch a random word from the database
         fetchData('get-words').then(resp => {
           let words = [];
