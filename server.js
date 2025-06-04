@@ -199,13 +199,13 @@ wss.on('connection', (ws) => {
       roomRoundTimers.set(roomCode, setTimeout(() => {
         // At timer end, finalize eligible drawers
         const active = roomActiveDrawers.get(roomCode) || new Set();
-        // Add anyone who saved (uploaded) even if not in active
+        roomRequiredDrawers.set(roomCode, new Set(active));
+        // If someone already saved, keep them in requiredDrawers
         if (roomUploads.has(roomCode)) {
           for (const uid of roomUploads.get(roomCode)) {
             active.add(uid);
           }
         }
-        roomRequiredDrawers.set(roomCode, new Set(active));
         // After timer, check if all required have uploaded
         const required = Array.from(roomRequiredDrawers.get(roomCode));
         const uploaded = roomUploads.has(roomCode) ? Array.from(roomUploads.get(roomCode)) : [];
@@ -222,7 +222,6 @@ wss.on('connection', (ws) => {
             }
           });
           roomRequiredDrawers.set(roomCode, new Set());
-          roomActiveDrawers.set(roomCode, new Set());
           roomUploads.set(roomCode, new Set());
         }
       }, 30000));
@@ -235,7 +234,6 @@ wss.on('connection', (ws) => {
         }
       });
     }
-
     else if (data.type === 'save-drawing') {
       const imageData = data.imageFile;
       const roomCode = data.room_code;
@@ -246,9 +244,14 @@ wss.on('connection', (ws) => {
       if (!roomActiveDrawers.has(roomCode)) roomActiveDrawers.set(roomCode, new Set());
       roomActiveDrawers.get(roomCode).add(userId);
 
-      // Always add to requiredDrawers if timer has ended (finalized), or if user saves after timer
-      if (!roomRequiredDrawers.has(roomCode)) roomRequiredDrawers.set(roomCode, new Set());
-      roomRequiredDrawers.get(roomCode).add(userId);
+      // If timer already ended, also add to requiredDrawers
+      if (roomRoundTimers.has(roomCode) && roomRequiredDrawers.has(roomCode)) {
+        // If timer is not running, requiredDrawers is already finalized
+        // If timer is running, requiredDrawers will be finalized at timer end
+        // So only add to requiredDrawers if timer is not running
+        // But to be safe, always add to requiredDrawers if user saves
+        roomRequiredDrawers.get(roomCode).add(userId);
+      }
 
       // Save drawing to PHP backend, pass round info
       fetchData('save-drawing', { image: imageData, room_code: roomCode, userId: userId, round: round })
@@ -262,6 +265,7 @@ wss.on('connection', (ws) => {
           // Only check for required drawers, not all players
           const requiredDrawers = Array.from(roomRequiredDrawers.get(roomCode) || []);
           const uploadedUserIds = Array.from(roomUploads.get(roomCode));
+          // Only check if requiredDrawers is finalized (i.e., timer ended or all have saved)
           let allUploaded = false;
           if (requiredDrawers.length > 0) {
             allUploaded = requiredDrawers.every(uid => uploadedUserIds.includes(uid));
