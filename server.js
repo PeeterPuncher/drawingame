@@ -26,7 +26,12 @@ const roomRounds = new Map(); // Map<roomCode, roundNumber>
 app.use(express.static('public'));
 
 function generateRoomCode() {
-  return Math.floor(10000 + Math.random() * 90000).toString();
+  let roomCode = Math.floor(10000 + Math.random() * 90000).toString();
+  while (rooms.has(roomCode))
+  {
+    roomCode = Math.floor(10000 + Math.random() * 90000).toString();
+  }
+  return roomCode;
 }
 
 wss.on('connection', (ws) => {
