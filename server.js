@@ -250,19 +250,6 @@ wss.on('connection', (ws) => {
           if (idx !== -1) arr.splice(idx, 1);
         }
 
-        // --- HOST REASSIGNMENT LOGIC ---
-        if (roomHosts.has(roomCode) && String(roomHosts.get(roomCode)) === String(ws.userId)) {
-          // Host left, pick a new host if any players remain
-          const arr = roomPlayers.get(roomCode) || [];
-          if (arr.length > 0) {
-            // Assign first player as new host
-            roomHosts.set(roomCode, String(arr[0].userId));
-          } else {
-            // No players left, remove host
-            roomHosts.delete(roomCode);
-          }
-        }
-
         // Broadcast that the user left after a grace period
         const timeoutId = setTimeout(() => {
           roomClients.forEach(client => {
@@ -271,12 +258,10 @@ wss.on('connection', (ws) => {
                 type: 'user-left',
                 data: { room_code: roomCode, user: username }
               }));
-              // --- Notify all clients of new host (if any) ---
-              broadcastRoomPlayers(roomCode);
               getRooms(); // Update the lobby for all clients
             }
           });
-
+    
           // Delete room if empty
           if (roomClients.size == 0) {
             const deleteTimeoutId = setTimeout(() => {
@@ -288,7 +273,7 @@ wss.on('connection', (ws) => {
                 })
                 .catch(console.error);
             }, 3000); // 3-second grace period
-
+    
             roomTimeouts.set(roomCode, deleteTimeoutId);
           } else {
             getRooms();
