@@ -340,22 +340,6 @@
                 padding: 12px 4px;
             }
         }
-        .colorPickerButton {
-            border-style: dashed !important;
-            border-width: 2px !important;
-            background: #fff !important;
-            min-width: 36px;
-            min-height: 36px;
-            position: relative;
-        }
-        .colorPickerButton.active {
-            border-color: #43c6ac !important;
-            box-shadow: 0 0 0 3px #b2fefa;
-            outline: 2px solid #43c6ac;
-        }
-        .colorPickerButton input[type="color"] {
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -376,14 +360,6 @@
                 <div class="colorButton" data-color="#1100ff" style="background-color: #1100ff;"></div>
                 <div class="colorButton" data-color="#ba0dff" style="background-color: #ba0dff;"></div>
                 <div class="colorButton" data-color="#ff3ae5" style="background-color: #ff3ae5;"></div>
-                <!-- Color Picker Button -->
-                <label class="colorButton colorPickerButton" id="colorPickerLabel" style="padding:0; border:2px dashed #43c6ac; background: #fff; display:flex; align-items:center; justify-content:center; position:relative; cursor:pointer;">
-                    <input type="color" id="colorPicker" style="opacity:0; width:100%; height:100%; position:absolute; left:0; top:0; cursor:pointer;">
-                    <svg width="20" height="20" viewBox="0 0 20 20" style="z-index:1;" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="10" cy="10" r="8" stroke="#43c6ac" stroke-width="2" fill="none"/>
-                        <path d="M6 14L14 6" stroke="#43c6ac" stroke-width="2"/>
-                    </svg>
-                </label>
             </div>
             <div class="size-palette">
                 <div class="sizeButton" data-size="5"><img src="../imgs/kor.svg" alt="" style="width: 10px;"></div>
@@ -723,8 +699,6 @@
     const colorButtons = document.querySelectorAll('.colorButton');
     const sizeButtons = document.querySelectorAll('.sizeButton');
     const fillModeButton = document.getElementById('fillMode');
-    const colorPicker = document.getElementById('colorPicker');
-    const colorPickerLabel = document.getElementById('colorPickerLabel');
     
     let isDrawing = false;
     let lastX = 0;
@@ -751,38 +725,12 @@
             colorButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             currentColor = button.getAttribute('data-color');
-            // Remove highlight from color picker if not selected
-            if (colorPickerLabel) colorPickerLabel.classList.remove('active');
         });
     });
     
     fillModeButton.addEventListener('click', () => {
         fillMode = true;
     });
-    
-    // Color picker logic
-    if (colorPicker) {
-        colorPicker.addEventListener('input', (e) => {
-            const pickedColor = e.target.value;
-            currentColor = pickedColor;
-            // Remove active from all color buttons
-            colorButtons.forEach(btn => btn.classList.remove('active'));
-            // Highlight the color picker button
-            colorPickerLabel.classList.add('active');
-            // Optionally, update the colorPickerButton's background to match picked color
-            colorPickerLabel.style.background = pickedColor;
-        });
-        // When clicking the color picker label, highlight it and set color
-        colorPickerLabel.addEventListener('click', (e) => {
-            // Only highlight if not already active
-            if (!colorPickerLabel.classList.contains('active')) {
-                colorButtons.forEach(btn => btn.classList.remove('active'));
-                colorPickerLabel.classList.add('active');
-                currentColor = colorPicker.value;
-                colorPickerLabel.style.background = colorPicker.value;
-            }
-        });
-    }
     
     function floodFill(x, y, fillColor) {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -972,7 +920,7 @@ canvas.addEventListener('mousemove', (e) => {
     window.addEventListener('DOMContentLoaded', () => {
         let found = false;
         colorButtons.forEach(btn => {
-            if (btn.getAttribute('data-color') && btn.getAttribute('data-color').toLowerCase() === '#8a8a8a') {
+            if (btn.getAttribute('data-color').toLowerCase() === '#8a8a8a') {
                 btn.classList.add('active');
                 found = true;
             }
@@ -980,8 +928,6 @@ canvas.addEventListener('mousemove', (e) => {
         if (!found && colorButtons.length > 0) colorButtons[0].classList.add('active');
         // Set default brush size highlight
         if (sizeButtons.length > 0) sizeButtons[0].classList.add('active');
-        // Reset color picker button style
-        if (colorPickerLabel) colorPickerLabel.style.background = "#fff";
     });
 
     // Highlight selected brush size
