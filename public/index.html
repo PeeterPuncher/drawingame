@@ -235,10 +235,8 @@ socket.onmessage = (event) =>
   {
     roomList.innerHTML = '';
     console.log(msg, data.type);
-
-    // --- Render rooms from the end to the start (newest first) ---
-    for (let i = msg.length - 1; i >= 0; i--) {
-      const room = msg[i];
+    
+    msg.forEach(room => {
       const roomItem = document.createElement('li');
       roomItem.className = 'list-group-item d-flex justify-content-between align-items-center';
       
@@ -258,7 +256,7 @@ socket.onmessage = (event) =>
                               <button class="btn btn-success" onclick="joinRoom('${room.code}')">Join</button>`;
       }
       roomList.appendChild(roomItem);
-    }
+    });
   }
 
   // Create room
