@@ -22,7 +22,7 @@ const roomHosts = new Map(); // Map<roomCode, userId>
 const roomUploads = new Map(); // Map<roomCode, Set<userId>>
 const roomWords = new Map(); // Map<roomCode, word>
 const roomRounds = new Map(); // Map<roomCode, roundNumber>
-const roomStarted = new Map(); // Map<roomCode, boolean>  // <-- NEW
+const roomStarted = new Map(); // Map<roomCode, boolean>
 
 app.use(express.static('public'));
 
@@ -78,7 +78,7 @@ wss.on('connection', (ws) => {
           rooms.set(roomCode, new Set());
           roomStarted.set(roomCode, false); // <-- Mark as not started
     
-          console.log(`Created room ${roomCode}`); // Log the action
+          console.log(`Created room ${roomCode}`);
           ws.send(JSON.stringify({ type: 'room-created', data: { ...responseData, roomCode} }));
           getRooms();
         });
@@ -190,6 +190,34 @@ wss.on('connection', (ws) => {
 
       }
     }
+    else if (data.type == 'update-lobby')
+      {
+        roomList.innerHTML = '';
+        console.log(msg, data.type);
+      
+        // --- Render rooms: newest first ---
+        const rooms = Array.isArray(msg) ? [...msg].reverse() : [];
+        for (const room of rooms) {
+          const roomItem = document.createElement('li');
+          roomItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+          
+          if (room.players == "0")
+          {
+            roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
+                                  <span style="color: #911e16">Room Closing</span>`;
+          }
+          else if (room.started) {
+            roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span>
+                                  <span style="color: #888; font-weight: bold;">Game Started</span>`;
+          }
+          else
+          {
+            roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
+                                  <button class="btn btn-success" onclick="joinRoom('${room.code}')">Join</button>`;
+          }
+          roomList.appendChild(roomItem);
+        }
+      }
 ////////////////////////////////////////////////////////////////////////////////////////////
     else if (data.type === 'save-drawing') {
       const imageData = data.imageFile;
@@ -363,14 +391,12 @@ ws.on('close', () => {
     const roomClients = rooms.get(roomCode);
     roomClients.delete(ws);
 
-    // Remove from player list
     if (roomPlayers.has(roomCode)) {
       const arr = roomPlayers.get(roomCode);
       const idx = arr.findIndex(p => p.name === username);
       if (idx !== -1) arr.splice(idx, 1);
     }
 
-    // Indíts egy törlési időzítőt, de ne végezd el az adatbázis törlést azonnal!
     const timeoutId = setTimeout(() => {
       // Itt lehet meghívni a "final deletion" vagy a "set offline" végleges műveletet.
       // Pl.: helyettesítsd a törlést offline állapotra, vagy csak küldj értesítést:
@@ -382,15 +408,13 @@ ws.on('close', () => {
                 type: 'user-disconnected',
                 data: { user: username }
               }));
-              getRooms(); // frissítsd a lobby állapotot
+              getRooms();
             }
           });
         })
         .catch(console.error);
 
-      // Törölheted a szobából, ha már üres (vagy esetleg csak offline státusz kerül beállításra)
       if (roomClients.size === 0) {
-        // Itt lehet a szoba törlését is késleltetni, vagy csak offline-ra állítani
         const deleteTimeoutId = setTimeout(() => {
           rooms.delete(roomCode);
           fetchData('delete-room', { room_code: roomCode })
