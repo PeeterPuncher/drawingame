@@ -221,95 +221,104 @@
 
   let socket = new WebSocket('wss://drawingame.onrender.com/ws');
 
-
-
-socket.onmessage = (event) => 
-{
-  const data = JSON.parse(event.data);
-  console.log(data);
-  
-  const msg = data.data.data;
-
-  // List all rooms
-  if (data.type == 'update-lobby')
+  socket.onmessage = (event) => 
   {
-    roomList.innerHTML = '';
-    console.log(msg, data.type);
+    const data = JSON.parse(event.data);
+    console.log(data);
     
-    msg.forEach(room => {
-      const roomItem = document.createElement('li');
-      roomItem.className = 'list-group-item d-flex justify-content-between align-items-center';
-      
-      if (room.players == "0")
-      {
-        roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
+    const msg = data.data.data;
+
+    // List all rooms
+    if (data.type == 'update-lobby')
+    {
+      roomList.innerHTML = '';
+      console.log(msg, data.type);
+
+      // --- Sort rooms by code descending (newest first) ---
+      msg.sort((a, b) => {
+        // If code is numeric, sort numerically, else fallback to string
+        const codeA = parseInt(a.code, 10);
+        const codeB = parseInt(b.code, 10);
+        if (!isNaN(codeA) && !isNaN(codeB)) {
+          return codeB - codeA;
+        }
+        return String(b.code).localeCompare(String(a.code));
+      });
+
+      msg.forEach(room => {
+        const roomItem = document.createElement('li');
+        roomItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+        
+        if (room.players == "0")
+        {
+          roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
                               <span style="color: #911e16">Room Closing</span>`;
-      }
-      // --- NEW: Prevent join if started ---
-      else if (room.started) {
-        roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span>
+        }
+        // --- NEW: Prevent join if started ---
+        else if (room.started) {
+          roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span>
                               <span style="color: #888; font-weight: bold;">Game Started</span>`;
-      }
-      else
-      {
-        roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
+        }
+        else
+        {
+          roomItem.innerHTML = `<span><strong>${room.name}</strong> (Players: ${room.players})</span> 
                               <button class="btn btn-success" onclick="joinRoom('${room.code}')">Join</button>`;
-      }
-      roomList.appendChild(roomItem);
-    });
-  }
+        }
+        roomList.appendChild(roomItem);
+      });
+    }
 
-  // Create room
-  else if (data.type == 'room-created')
-  {
-    console.log(msg, data.type);
+    // Create room
+    else if (data.type == 'room-created')
+    {
+      console.log(msg, data.type);
+      socket.send(JSON.stringify({ type: 'get-lobby' }));
+      window.location.href = `/room?roomId=${msg}`;
+    }
+  };
+
+  createRoomButton.addEventListener('click', () => {
+    sessionStorage.clear();
+    socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim()}));
     socket.send(JSON.stringify({ type: 'get-lobby' }));
-    window.location.href = `/room?roomId=${msg}`;
-  }
-};
-
-createRoomButton.addEventListener('click', () => {
-  sessionStorage.clear();
-  socket.send(JSON.stringify({ type: 'create-room', roomName: roomNameInput.value.trim()}));
-  socket.send(JSON.stringify({ type: 'get-lobby' }));
-});
-
-function getLobby() {
-  socket.send(JSON.stringify({ type: 'get-lobby' }));
-}
-
-// Join room from lobby
-function joinRoom(roomId) {
-  // Store username in sessionStorage
-  sessionStorage.clear();
-
-  // Redirect to room.html with roomId
-  window.location.href = `/room?roomId=${roomId}`;
-}
-
-socket.onopen = () =>
-{
-  console.log('WebSocket connection established');
-  socket.send(JSON.stringify({ type: 'set-page', page: 'lobby' }));
-  socket.send(JSON.stringify({ type: 'get-lobby' })); // Request the latest room list
-
-  if (window.location.pathname === '/room')
-  {
-    window.location.href = `/`;
-  }
-};
-
-socket.onclose = () => {
-  console.log('WebSocket connection closed');
-  document.getElementById('disconnected-alert').style.display = 'block';
-  document.getElementById('disconnected-alert').querySelector('a').addEventListener('click', () => {
-    window.location.reload();
   });
-};
 
-socket.onerror = (error) => {
-  console.error('WebSocket error:', error);
-};
+  function getLobby() {
+    socket.send(JSON.stringify({ type: 'get-lobby' }));
+  }
+
+  // Join room from lobby
+  function joinRoom(roomId) {
+    // Store username in sessionStorage
+    sessionStorage.clear();
+
+    // Redirect to room.html with roomId
+    window.location.href = `/room?roomId=${roomId}`;
+  }
+
+  socket.onopen = () =>
+  {
+    console.log('WebSocket connection established');
+    socket.send(JSON.stringify({ type: 'set-page', page: 'lobby' }));
+    socket.send(JSON.stringify({ type: 'get-lobby' })); // Request the latest room list
+
+    if (window.location.pathname === '/room')
+    {
+      window.location.href = `/`;
+    }
+  };
+
+  socket.onclose = () => {
+    console.log('WebSocket connection closed');
+    document.getElementById('disconnected-alert').style.display = 'block';
+    document.getElementById('disconnected-alert').querySelector('a').addEventListener('click', () => {
+      window.location.reload();
+    });
+  };
+
+  socket.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
 </script>
 </body>
 </html>
