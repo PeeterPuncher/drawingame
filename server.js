@@ -31,9 +31,6 @@ function generateRoomCode() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-ws.on('close', () => {
-  
-});
 
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
