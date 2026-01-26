@@ -93,3 +93,8 @@ wss.on('connection', (ws, req) => {
     });
   });
 });
+
+ws.on('close', () => {
+  Connection.Delete(userId);
+  console.log(`User ${userId} disconnected.`);
+});
