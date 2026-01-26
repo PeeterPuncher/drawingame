@@ -14,30 +14,82 @@ server.listen(port, () => {
   console.log(`Server running on 3 redbulls and prayers, please be patient...`);
 });
 
-
-
 app.use(express.static('public'));
-
-function generateRoomCode() {
-  let roomCode = Math.floor(10000 + Math.random() * 90000).toString();
-  while (rooms.has(roomCode))
-  {
-    roomCode = Math.floor(10000 + Math.random() * 90000).toString();
-  }
-  return roomCode;
-}
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+const Connections = new Map();
 
+class Connection {
+  static Update(id, ws) {
+    const existing = Connections.get(id);
+    
+    if (existing) {
+      existing.ws = ws;
+      existing.lastPing = Date.now();
+    } else {
+      Connections.set(id, {
+        ws: ws,
+        lastPing: Date.now()
+      });
+    }
+  }
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/room', (req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
-app.get('/canvas', (req, res) => res.sendFile(path.join(__dirname, 'public', 'rajzolas/rajzuj.html')));
+  static Getws(id) {
+    const conn = Connections.get(id);
+    if (!conn) return null;
 
+    conn.lastPing = Date.now();
+    return conn.ws;
+  }
 
-async function getRooms() {
-  
+  static Delete(id) {
+    if (id === undefined) {
+      const now = Date.now();
+      // Clean up expired connections
+      for (const [userId, data] of Connections) {
+        if (now - data.lastPing > 600000) {
+          Connections.delete(userId);
+        }
+      }
+    } else {
+      Connections.delete(id);
+    }
+  }
 }
+
+setInterval(() => {
+  Connection.Delete()
+}, 10000)
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+wss.on('connection', (ws, req) => {
+  const params = new URLSearchParams(req.url.replace('/?', ''));
+  const userId = params.get('userId');
+  if (!userId) {
+    ws.close();
+    return;
+  }
+  Connection.Update(userId, ws);
+
+  ws.on('message', (message) => {
+    message = JSON.parse(message);
+    const targets = message.targets;
+    const content = message.content;
+
+    targets.forEach(targetId => {
+      const targetWs = Connection.Getws(targetId);
+      if (targetWs) {
+        //forward content to the targets
+        targetWs.send(content);
+      }
+      else
+      {
+        //return error to sender
+        const senderWs = Connection.Getws(userId);
+        senderWs.send(`User ${targetid} is not available`);
+      }
+    });
+  });
+});
