@@ -3,6 +3,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
 const https = require('https');
+const { log } = require('console');
 
 const app = express();
 const server = http.createServer(app);
@@ -10,13 +11,13 @@ const wss = new WebSocket.Server({ server });
 const baseUrl = 'https://gamedb.alwaysdata.net';
 const port = 3000;
 
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
   console.log(`\x1b[32m[+]\x1b[0m authenticating...`);
   setTimeout(() => {
     console.log(`\x1b[32m[+]\x1b[0m mapping the driver...`);
   }, 500);
   setTimeout(() => {
-    console.log(`\x1b[31m[-]\x1b[0m fuck you nigga`);
+    console.log(`\x1b[31m[-]\x1b[0m fuck you nigga\t\t\t| ${port}`);
   }, 1000);
 });
 
@@ -71,33 +72,42 @@ setInterval(() => {
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 wss.on('connection', (ws, req) => {
-  const params = new URLSearchParams(req.url.replace('/?', ''));
-  const userId = params.get('userId');
+  const protocol = req.headers.referer ? 'http' : 'ws'; // fallback for parsing
+  const fullUrl = new URL(req.url, `http://${req.headers.host}`);
+  const userId = fullUrl.searchParams.get('userId');
+
   if (!userId) {
+    console.log("Connection rejected: No userId provided.");
     ws.close();
     return;
   }
   Connection.Update(userId, ws);
 
-  ws.on('message', (message) => {
-    message = JSON.parse(message);
-    const targets = message.targets;
-    const content = message.content;
+  ws.on('message', (data) => {
+    let { type, targets, content } = JSON.parse(data);
+    log(`Received message from ${userId}: Type=${type}, Targets=${targets}, Content=${content}`);
+
+    const outgoingPayload = JSON.stringify({
+      type: type,
+      payload: {
+        from: userId,
+        message: content,
+        timestamp: new Date()
+      }
+    });
+
+    if (!targets || targets.length == 0) {
+      targets = Array.from(Connections.keys()).filter(id => id !== userId);
+    }
 
     targets.forEach(targetId => {
       const targetWs = Connection.Getws(targetId);
-      if (targetWs) {
-        //forward content to the targets
-        targetWs.send(content);
-      }
-      else
-      {
-        //return error to sender
-        const senderWs = Connection.Getws(userId);
-        senderWs.send(`User ${targetid} is not available`);
+      if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+        targetWs.send(outgoingPayload);
       }
     });
   });
+
   ws.on('close', () => {
     Connection.Delete(userId);
     console.log(`User ${userId} disconnected.`);
