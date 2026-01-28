@@ -11,12 +11,12 @@ const baseUrl = 'https://gamedb.alwaysdata.net';
 const port = 3000;
 
 server.listen(port, () => {
-  console.log(`"\x1b[32m [+] \x1b[0m" authenticating...`);
+  console.log(`\x1b[32m[+]\x1b[0m authenticating...`);
   setTimeout(() => {
-    console.log(`"\x1b[32m [+] \x1b[0m" mapping the driver...`);
+    console.log(`\x1b[32m[+]\x1b[0m mapping the driver...`);
   }, 500);
   setTimeout(() => {
-    console.log(`"\x1b[31m [-] \x1b[0m" fuck you nigga`);
+    console.log(`\x1b[31m[-]\x1b[0m fuck you nigga`);
   }, 1000);
 });
 
