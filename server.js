@@ -82,7 +82,8 @@ wss.on('connection', (ws, req) => {
     return;
   }
   Connection.Update(userId, ws);
-
+  console.log(`${UserId} connected`);
+  
   ws.on('message', (data) => {
     let { type, targets, content } = JSON.parse(data);
     log(`Received message from ${userId}: Type=${type}, Targets=${targets}, Content=${content}`);
