@@ -1,23 +1,19 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const path = require('path');
-const https = require('https');
-const { log } = require('console');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
-const baseUrl = 'https://gamedb.alwaysdata.net';
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 server.listen(port, '0.0.0.0', () => {
-  console.log(`\x1b[32m[+]\x1b[0m authenticating...`);
+    console.log(`\x1b[32m[+]\x1b[0m authenticating...`);
   setTimeout(() => {
     console.log(`\x1b[32m[+]\x1b[0m mapping the driver...`);
   }, 500);
   setTimeout(() => {
-    console.log(`\x1b[31m[-]\x1b[0m fuck you nigga\t\t\t| ${port}`);
+    console.log(`\x1b[31m[-]\x1b[0m server:\t\t\t| ${server.address().address}:${server.address().port}`);
   }, 1000);
 });
 
@@ -74,7 +70,7 @@ setInterval(() => {
 wss.on('connection', (ws, req) => {
   const protocol = req.headers.referer ? 'http' : 'ws'; // fallback for parsing
   const fullUrl = new URL(req.url, `http://${req.headers.host}`);
-  const userId = fullUrl.searchParams.get('userId');
+  const userId = fullUrl.searchParams.get('token');
 
   if (!userId) {
     console.log("Connection rejected: No userId provided.");
@@ -86,7 +82,7 @@ wss.on('connection', (ws, req) => {
   
   ws.on('message', (data) => {
     let { type, targets, content } = JSON.parse(data);
-    log(`Received message from ${userId}: Type=${type}, Targets=${targets}, Content=${content}`);
+    console.log(`Received message from ${userId}: Type=${type}, Targets=${targets}, Content=${content}`);
 
     const outgoingPayload = JSON.stringify({
       type: type,
