@@ -94,7 +94,7 @@ wss.on('connection', (ws, req) => {
     });
 
     if (!targets || targets.length == 0) {
-      targets = Array.from(Connections.keys());
+      targets = Array.from(Connections.keys()).filter(id => id);
     }
 
     targets.forEach(targetId => {
