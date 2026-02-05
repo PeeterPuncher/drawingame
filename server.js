@@ -70,7 +70,7 @@ setInterval(() => {
 wss.on('connection', (ws, req) => {
   const protocol = req.headers.referer ? 'http' : 'ws'; // fallback for parsing
   const fullUrl = new URL(req.url, `http://${req.headers.host}`);
-  const userId = fullUrl.searchParams.get('token');
+  const userId = fullUrl.searchParams.get('userid');
 
   if (!userId) {
     console.log("Connection rejected: No userId provided.");
