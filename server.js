@@ -78,7 +78,7 @@ wss.on('connection', (ws, req) => {
     return;
   }
   Connection.Update(userId, ws);
-  console.log(`${userId} connected`);
+  console.log(`${userId} connected\n`+Connections);
   
   ws.on('message', (data) => {
     let { type, targets, content } = JSON.parse(data);
