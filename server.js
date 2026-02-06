@@ -28,9 +28,12 @@ class Connection {
     const existing = Connections.get(id);
     
     if (existing) {
+      console.log('update:', id, ws);
+      
       existing.ws = ws;
       existing.lastPing = Date.now();
     } else {
+      console.log('new:', id, ws);
       Connections.set(id, {
         ws: ws,
         lastPing: Date.now()
