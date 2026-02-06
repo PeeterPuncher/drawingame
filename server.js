@@ -13,7 +13,7 @@ server.listen(port, '0.0.0.0', () => {
     console.log(`\x1b[32m[+]\x1b[0m mapping the driver...`);
   }, 500);
   setTimeout(() => {
-    console.log(`\x1b[31m[-]\x1b[0m server:\t\t\t| ${server.address().address}:${server.address().port}`);
+    console.log(`\x1b[31m[-]\x1b[0m fuck you nigga:\t\t\t| ${server.address().address}:${server.address().port}`);
   }, 1000);
 });
 
@@ -78,7 +78,7 @@ wss.on('connection', (ws, req) => {
     return;
   }
   Connection.Update(userId, ws);
-  console.log(`${userId} connected\n`+Connections);
+  console.log(`${userId} connected\n`+`Total connections: ${Connections.size}`);
   
   ws.on('message', (data) => {
     let { type, targets, content } = JSON.parse(data);
@@ -99,6 +99,8 @@ wss.on('connection', (ws, req) => {
 
     targets.forEach(targetId => {
       const targetWs = Connection.Getws(targetId);
+      console.log(targetWs);
+      
       if (targetWs && targetWs.readyState === WebSocket.OPEN) {
         targetWs.send(outgoingPayload);
       }
