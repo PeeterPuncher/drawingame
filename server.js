@@ -99,7 +99,7 @@ wss.on('connection', (ws, req) => {
 
     targets.forEach(targetId => {
       const targetWs = Connection.Getws(targetId);
-      console.log(targetWs);
+      console.log(targetId, targetWs);
       
       if (targetWs && targetWs.readyState === WebSocket.OPEN) {
         targetWs.send(outgoingPayload);
