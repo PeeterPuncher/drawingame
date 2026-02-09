@@ -85,7 +85,7 @@ wss.on('connection', (ws, req) => {
     const outgoingPayload = JSON.stringify({
       type: type,
       payload: {
-        from: userId,
+        sender: userId,
         message: content,
         timestamp: new Date()
       }
