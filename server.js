@@ -28,12 +28,9 @@ class Connection {
     const existing = Connections.get(id);
     
     if (existing) {
-      console.log('update:', id, ws);
-      
       existing.ws = ws;
       existing.lastPing = Date.now();
     } else {
-      console.log('new:', id, ws);
       Connections.set(id, {
         ws: ws,
         lastPing: Date.now()
@@ -81,11 +78,9 @@ wss.on('connection', (ws, req) => {
     return;
   }
   Connection.Update(userId, ws);
-  console.log(`${userId} connected\n`+`Total connections: ${Connections.size}`);
   
   ws.on('message', (data) => {
     let { type, targets, content } = JSON.parse(data);
-    console.log(`Received message from ${userId}: Type=${type}, Targets=${targets}, Content=${content}`);
 
     const outgoingPayload = JSON.stringify({
       type: type,
@@ -112,6 +107,5 @@ wss.on('connection', (ws, req) => {
 
   ws.on('close', () => {
     Connection.Delete(userId);
-    console.log(`User ${userId} disconnected.`);
   });
 });
