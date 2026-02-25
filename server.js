@@ -53,7 +53,7 @@ class Connection {
       const now = Date.now();
       // Clean up expired connections
       for (const [userId, data] of Connections) {
-        if (now - data.lastPing > 6000) {
+        if (now - data.lastPing > 86400000) {
           data.ws.close()
           Connections.delete(userId);
         }
@@ -66,7 +66,7 @@ class Connection {
 
 setInterval(() => {
   Connection.Delete()
-}, 10000)
+}, 3600000)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
