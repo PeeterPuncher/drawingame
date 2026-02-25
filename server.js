@@ -54,7 +54,7 @@ class Connection {
       // Clean up expired connections
       for (const [userId, data] of Connections) {
         if (now - data.lastPing > 6000) {
-          data.
+          data.ws.close()
           Connections.delete(userId);
         }
       }
