@@ -30,6 +30,8 @@ class Connection {
     if (existing) {
       existing.ws = ws;
       existing.lastPing = Date.now();
+      console.log(existing.id+" updated");
+      
     } else {
       Connections.set(id, {
         ws: ws,
@@ -52,6 +54,7 @@ class Connection {
       // Clean up expired connections
       for (const [userId, data] of Connections) {
         if (now - data.lastPing > 6000) {
+          data.
           Connections.delete(userId);
         }
       }
