@@ -47,11 +47,11 @@ class Connection {
   }
 
   static Delete(id) {
-    if (id === undefined) {
+    if (!id) {
       const now = Date.now();
       // Clean up expired connections
       for (const [userId, data] of Connections) {
-        if (now - data.lastPing > 600000) {
+        if (now - data.lastPing > 6000) {
           Connections.delete(userId);
         }
       }
@@ -68,7 +68,6 @@ setInterval(() => {
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 wss.on('connection', (ws, req) => {
-  const protocol = req.headers.referer ? 'http' : 'ws'; // fallback for parsing
   const fullUrl = new URL(req.url, `http://${req.headers.host}`);
   const userId = fullUrl.searchParams.get('userid');
 
@@ -97,7 +96,6 @@ wss.on('connection', (ws, req) => {
 
     targets.forEach(targetId => {
       const targetWs = Connection.Getws(targetId);
-      console.log(targetId, targetWs);
       
       if (targetWs && targetWs.readyState === WebSocket.OPEN) {
         targetWs.send(outgoingPayload);
