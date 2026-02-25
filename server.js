@@ -30,7 +30,7 @@ class Connection {
     if (existing) {
       existing.ws = ws;
       existing.lastPing = Date.now();
-      console.log(existing.id+" updated");
+      console.log(id+" updated");
       
     } else {
       Connections.set(id, {
