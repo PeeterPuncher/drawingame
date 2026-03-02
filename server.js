@@ -49,9 +49,24 @@ class Connection {
   }
 
   static Delete(id) {
+    if (!id) {
+      const now = Date.now();
+      // Clean up expired connections
+      for (const [userId, data] of Connections) {
+        if (now - data.lastPing > 60000) {
+          data.ws.close()
+          Connections.delete(userId);
+        }
+      }
+    } else {
       Connections.delete(id);
+    }
   }
 }
+
+setInterval(() => {
+  Connection.Delete()
+}, 10000)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
