@@ -8,13 +8,7 @@ const wss = new WebSocket.Server({ server });
 const port = process.env.PORT || 3000;
 
 server.listen(port, '0.0.0.0', () => {
-    console.log(`\x1b[32m[+]\x1b[0m authenticating...`);
-  setTimeout(() => {
-    console.log(`\x1b[32m[+]\x1b[0m mapping the driver...`);
-  }, 500);
-  setTimeout(() => {
-    console.log(`\x1b[31m[-]\x1b[0m fuck you nigga:\t\t\t| ${server.address().address}:${server.address().port}`);
-  }, 1000);
+  console.log(`Server is listening on port ${port}`);
 });
 
 app.use(express.static('public'));
@@ -53,7 +47,7 @@ class Connection {
       const now = Date.now();
       // Clean up expired connections
       for (const [userId, data] of Connections) {
-        if (now - data.lastPing > 60000) {
+        if (now - data.lastPing > 600000) {
           data.ws.close()
           Connections.delete(userId);
         }
